@@ -1,15 +1,15 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const { baseURL, apiKey, model, messages } = req.body;
-
-  if (!baseURL || !apiKey || !model || !messages) {
-    return res.status(400).json({ error: "Missing parameters" });
-  }
-
+export async function POST(request) {
   try {
+    const body = await request.json();
+    const { baseURL, apiKey, model, messages } = body;
+
+    if (!baseURL || !apiKey || !model || !messages) {
+      return new Response(
+        JSON.stringify({ error: "Missing parameters" }),
+        { status: 400 }
+      );
+    }
+
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -24,15 +24,21 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    return res.status(200).json({
-      success: true,
-      providerResponse: data
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        providerResponse: data
+      }),
+      { status: 200 }
+    );
 
   } catch (error) {
-    return res.status(500).json({
-      error: "Provider request failed",
-      details: error.message
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Provider request failed",
+        details: error.message
+      }),
+      { status: 500 }
+    );
   }
 }
