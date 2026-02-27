@@ -3,251 +3,461 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Slot AI Studio</title>
+  <title>Slot AI Studio - 两步生成</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body { 
-      font-family: 'Segoe UI', Arial, sans-serif; 
-      padding: 20px; 
-      max-width: 900px;
-      margin: 0 auto;
-      background-color: #f5f5f5;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
     }
+
     .container {
-      background-color: white;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* 步骤指示器 */
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .step-indicator::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-50%);
+      z-index: 1;
+    }
+
+    .step {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 50px;
+      padding: 12px 30px;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      position: relative;
+      z-index: 2;
+      transition: all 0.3s ease;
+    }
+
+    .step.active {
+      background: white;
+      color: #764ba2;
+      border-color: white;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .step.completed {
+      background: #4CAF50;
+      border-color: #4CAF50;
+      color: white;
+    }
+
+    /* 主卡片 */
+    .card {
+      background: white;
+      border-radius: 20px;
       padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
     }
-    h1 { 
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-header h2 {
       color: #333;
-      border-bottom: 2px solid #4CAF50;
-      padding-bottom: 10px;
+      font-size: 24px;
+      font-weight: 600;
     }
-    h2 {
+
+    .card-header .step-badge {
+      background: #667eea;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 15px;
+    }
+
+    /* 输入区域 */
+    .input-group {
+      margin-bottom: 25px;
+    }
+
+    .input-group label {
+      display: block;
       color: #555;
-      margin-top: 25px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
+
     textarea { 
       width: 100%; 
       height: 120px; 
-      margin: 10px 0 20px; 
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
       font-size: 16px;
       resize: vertical;
-      box-sizing: border-box;
       font-family: inherit;
+      transition: all 0.3s;
     }
+
     textarea:focus {
       outline: none;
-      border-color: #4CAF50;
-      box-shadow: 0 0 5px rgba(76,175,80,0.3);
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
     }
+
+    /* 按钮样式 */
     .button-group {
       display: flex;
-      gap: 10px;
+      gap: 15px;
       flex-wrap: wrap;
-      margin: 15px 0;
     }
-    button { 
-      background-color: #4CAF50;
-      color: white;
-      padding: 12px 24px;
+
+    .btn {
+      padding: 14px 28px;
       border: none;
-      border-radius: 5px;
+      border-radius: 12px;
       font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       flex: 1;
-      min-width: 150px;
+      min-width: 200px;
     }
-    button:hover {
-      background-color: #45a049;
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 25px rgba(102,126,234,0.4);
     }
-    button:disabled {
-      background-color: #cccccc;
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #666;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #e0e0e0;
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
       transform: none;
-      box-shadow: none;
     }
-    button.secondary {
-      background-color: #2196F3;
+
+    /* 内容区域 */
+    .content-area {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+      border: 1px solid #e9ecef;
     }
-    button.secondary:hover {
-      background-color: #1976D2;
+
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
     }
-    button.warning {
-      background-color: #ff9800;
+
+    .content-header h3 {
+      color: #333;
+      font-size: 18px;
     }
-    button.warning:hover {
-      background-color: #f57c00;
-    }
+
     pre { 
-      background: #f8f9fa; 
-      padding: 20px; 
-      border-radius: 5px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
       white-space: pre-wrap; 
       font-size: 14px;
       line-height: 1.6;
       border: 1px solid #e9ecef;
       min-height: 200px;
-      max-height: 500px;
+      max-height: 400px;
       overflow-y: auto;
-      font-family: 'Segoe UI', monospace;
+      font-family: 'Consolas', monospace;
     }
-    .tab-container {
-      display: flex;
-      gap: 2px;
-      margin-bottom: 15px;
-      background: #f0f0f0;
-      padding: 5px;
-      border-radius: 8px;
-    }
-    .tab {
-      flex: 1;
-      padding: 10px;
-      text-align: center;
-      cursor: pointer;
-      border-radius: 5px;
-      transition: all 0.3s;
-      font-weight: 500;
-    }
-    .tab:hover {
-      background: rgba(255,255,255,0.5);
-    }
-    .tab.active {
-      background: white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    hr { 
-      margin: 30px 0; 
-      border: none;
-      border-top: 1px solid #dee2e6;
-    }
-    .info {
-      color: #6c757d;
-      font-size: 14px;
-      margin-top: 10px;
-    }
+
+    /* 复制按钮 */
     .copy-btn {
-      background-color: #6c757d;
-      padding: 8px 16px;
-      font-size: 14px;
-      margin-top: 10px;
-      min-width: auto;
-      flex: none;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: #666;
     }
+
     .copy-btn:hover {
-      background-color: #5a6268;
-    }
-    .footer-buttons {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .badge {
-      background-color: #4CAF50;
+      background: #667eea;
       color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      margin-left: 10px;
+      border-color: #667eea;
+    }
+
+    /* 提示信息 */
+    .info-message {
+      background: #e3f2fd;
+      border-radius: 8px;
+      padding: 12px;
+      color: #1976d2;
+      font-size: 14px;
+      margin-top: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-message.warning {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+
+    .info-message.success {
+      background: #e8f5e8;
+      color: #4CAF50;
+    }
+
+    hr {
+      margin: 30px 0;
+      border: none;
+      border-top: 2px dashed #e0e0e0;
+    }
+
+    /* 加载动画 */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .step {
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+      
+      .btn {
+        min-width: 100%;
+      }
     }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>🎰 Slot AI Studio - 美术提示词生成器</h1>
-
-  <h2>输入 Slot 游戏主题</h2>
-  <textarea id="themeInput" placeholder="例如：古埃及宝藏主题 Slot&#10;或者：海洋冒险主题 Slot&#10;或者：水果乐园主题 Slot"></textarea>
-  
-  <div class="button-group">
-    <button id="generateBtn">🎮 生成完整策划案</button>
-    <button id="generateArtPromptBtn" class="secondary">🎨 直接生成美术提示词</button>
-  </div>
-  <div class="info">使用 DeepSeek V3.2 模型生成</div>
-
-  <hr>
-
-  <div class="tab-container">
-    <div class="tab active" onclick="switchTab('plan')" id="tabPlan">📋 完整策划案</div>
-    <div class="tab" onclick="switchTab('art')" id="tabArt">🎨 美术提示词</div>
+  <!-- 步骤指示器 -->
+  <div class="step-indicator">
+    <div class="step active" id="step1">1. 输入主题</div>
+    <div class="step" id="step2">2. 生成策划案</div>
+    <div class="step" id="step3">3. 提取美术提示词</div>
   </div>
 
-  <div id="planSection">
-    <h2>📋 完整策划案</h2>
-    <pre id="output">等待生成...</pre>
-  </div>
-
-  <div id="artSection" style="display: none;">
-    <h2>🎨 美术提示词 
-      <span class="badge" id="artSourceBadge">从策划案提取</span>
-    </h2>
-    <pre id="artOutput">请先生成策划案，或点击"直接生成美术提示词"</pre>
-    <div class="footer-buttons">
-      <button id="copyArtPromptBtn" class="copy-btn">📋 复制提示词</button>
-      <button id="regenerateArtBtn" class="warning">🔄 重新生成美术提示词</button>
+  <!-- 第一步：输入主题卡片 -->
+  <div class="card" id="step1Card">
+    <div class="card-header">
+      <div class="step-badge">1</div>
+      <h2>输入游戏主题</h2>
     </div>
+    
+    <div class="input-group">
+      <label>🎰 Slot 游戏主题</label>
+      <textarea id="themeInput" placeholder="例如：古埃及宝藏主题 Slot&#10;或者：海洋冒险主题 Slot&#10;或者：水果乐园主题 Slot">古埃及宝藏主题 Slot</textarea>
+    </div>
+
+    <div class="button-group">
+      <button id="startGenerateBtn" class="btn btn-primary">
+        🚀 开始生成策划案
+      </button>
+    </div>
+  </div>
+
+  <!-- 第二步：策划案卡片 -->
+  <div class="card" id="step2Card" style="opacity: 0.5; pointer-events: none;">
+    <div class="card-header">
+      <div class="step-badge">2</div>
+      <h2>生成的策划案</h2>
+    </div>
+
+    <div class="content-area">
+      <div class="content-header">
+        <h3>📋 完整游戏策划案</h3>
+        <button id="copyPlanBtn" class="copy-btn" style="display: none;">📋 复制策划案</button>
+      </div>
+      <pre id="planOutput">等待生成策划案...</pre>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <button id="extractArtBtn" class="btn btn-success" disabled>
+        🎨 从策划案提取美术提示词
+      </button>
+    </div>
+  </div>
+
+  <!-- 第三步：美术提示词卡片 -->
+  <div class="card" id="step3Card" style="opacity: 0.5; pointer-events: none;">
+    <div class="card-header">
+      <div class="step-badge">3</div>
+      <h2>美术提示词</h2>
+    </div>
+
+    <div class="content-area">
+      <div class="content-header">
+        <h3>🎨 AI绘画提示词</h3>
+        <button id="copyArtBtn" class="copy-btn" style="display: none;">📋 复制提示词</button>
+      </div>
+      <pre id="artOutput">提取美术提示词后显示...</pre>
+    </div>
+
+    <!-- 提示信息区域 -->
+    <div id="infoMessage" class="info-message" style="display: none;"></div>
   </div>
 </div>
 
 <script>
 // 获取DOM元素
 const themeInput = document.getElementById("themeInput");
-const generateBtn = document.getElementById("generateBtn");
-const generateArtPromptBtn = document.getElementById("generateArtPromptBtn");
-const output = document.getElementById("output");
+const startGenerateBtn = document.getElementById("startGenerateBtn");
+const extractArtBtn = document.getElementById("extractArtBtn");
+const copyPlanBtn = document.getElementById("copyPlanBtn");
+const copyArtBtn = document.getElementById("copyArtBtn");
+const planOutput = document.getElementById("planOutput");
 const artOutput = document.getElementById("artOutput");
-const copyArtPromptBtn = document.getElementById("copyArtPromptBtn");
-const regenerateArtBtn = document.getElementById("regenerateArtBtn");
-const tabPlan = document.getElementById("tabPlan");
-const tabArt = document.getElementById("tabArt");
-const planSection = document.getElementById("planSection");
-const artSection = document.getElementById("artSection");
-const artSourceBadge = document.getElementById("artSourceBadge");
+const infoMessage = document.getElementById("infoMessage");
 
-// 存储当前生成的策划案内容
+// 步骤元素
+const step1 = document.getElementById("step1");
+const step2 = document.getElementById("step2");
+const step3 = document.getElementById("step3");
+const step1Card = document.getElementById("step1Card");
+const step2Card = document.getElementById("step2Card");
+const step3Card = document.getElementById("step3Card");
+
+// 存储数据
 let currentPlan = "";
 let currentArtPrompt = "";
 
 // 固定的模型配置
 const MODEL = "deepseek/deepseek-v3.2-251201";
 
-// 切换标签页
-window.switchTab = function(tab) {
-  if (tab === 'plan') {
-    tabPlan.classList.add('active');
-    tabArt.classList.remove('active');
-    planSection.style.display = 'block';
-    artSection.style.display = 'none';
-  } else {
-    tabArt.classList.add('active');
-    tabPlan.classList.remove('active');
-    planSection.style.display = 'none';
-    artSection.style.display = 'block';
+// 更新步骤状态
+function updateSteps(step) {
+  // 重置所有步骤
+  step1.className = "step";
+  step2.className = "step";
+  step3.className = "step";
+  
+  // 根据当前步骤设置样式
+  if (step >= 1) {
+    step1.className = "step completed";
   }
-};
+  if (step >= 2) {
+    step2.className = "step active";
+    step2Card.style.opacity = "1";
+    step2Card.style.pointerEvents = "auto";
+  }
+  if (step >= 3) {
+    step2.className = "step completed";
+    step3.className = "step active";
+    step3Card.style.opacity = "1";
+    step3Card.style.pointerEvents = "auto";
+  }
+}
 
-// 生成完整策划案
-generateBtn.addEventListener("click", async () => {
+// 显示信息提示
+function showInfo(type, message) {
+  infoMessage.style.display = "flex";
+  infoMessage.className = `info-message ${type}`;
+  
+  const icon = type === "success" ? "✅" : type === "warning" ? "⚠️" : "ℹ️";
+  infoMessage.innerHTML = `${icon} ${message}`;
+  
+  // 3秒后自动隐藏
+  setTimeout(() => {
+    infoMessage.style.display = "none";
+  }, 3000);
+}
+
+// 第一步：生成策划案
+startGenerateBtn.addEventListener("click", async () => {
   const theme = themeInput.value.trim();
 
   if (!theme) {
-    alert("请输入游戏主题！");
+    showInfo("warning", "请输入游戏主题！");
     return;
   }
 
-  // 禁用按钮
-  setButtonsDisabled(true);
-  output.textContent = "⏳ 正在生成策划案，请稍候...";
+  // 禁用按钮，显示加载状态
+  startGenerateBtn.disabled = true;
+  startGenerateBtn.innerHTML = '<span class="loading"></span> 生成中...';
+  planOutput.textContent = "⏳ 正在生成策划案，请稍候...";
   
-  // 切换到策划案标签
-  switchTab('plan');
+  // 更新步骤到2
+  updateSteps(2);
 
   const messages = [
     {
@@ -285,106 +495,42 @@ generateBtn.addEventListener("click", async () => {
       throw new Error(data.details || data.error || "生成失败");
     }
 
+    // 保存策划案内容
     currentPlan = data.content;
-    output.textContent = currentPlan;
+    planOutput.textContent = currentPlan;
     
-    // 自动生成美术提示词
-    await extractArtPrompt(currentPlan, theme);
+    // 启用提取按钮和复制按钮
+    extractArtBtn.disabled = false;
+    copyPlanBtn.style.display = "inline-block";
+    
+    showInfo("success", "策划案生成成功！点击下方按钮提取美术提示词 →");
 
   } catch (err) {
-    output.textContent = "❌ 生成失败：\n" + err.message;
+    planOutput.textContent = "❌ 生成失败：\n" + err.message;
+    showInfo("warning", "生成失败：" + err.message);
     console.error("错误详情:", err);
   } finally {
-    setButtonsDisabled(false);
+    startGenerateBtn.disabled = false;
+    startGenerateBtn.innerHTML = '🚀 开始生成策划案';
   }
 });
 
-// 直接生成美术提示词
-generateArtPromptBtn.addEventListener("click", async () => {
-  const theme = themeInput.value.trim();
-
-  if (!theme) {
-    alert("请输入游戏主题！");
+// 第二步：提取美术提示词
+extractArtBtn.addEventListener("click", async () => {
+  if (!currentPlan) {
+    showInfo("warning", "请先生成策划案！");
     return;
   }
 
-  setButtonsDisabled(true);
-  artOutput.textContent = "⏳ 正在生成美术提示词...";
-  artSourceBadge.textContent = "直接生成";
-  
-  // 切换到美术提示词标签
-  switchTab('art');
-
-  const messages = [
-    {
-      role: "user",
-      content: `请为一个"${theme}"的Slot游戏生成详细的AI绘画提示词。
-
-要求生成5-8个不同的美术提示词，覆盖以下方面：
-1. 游戏主视觉图
-2. 角色设计（如果有）
-3. 场景背景
-4. 特殊符号图标
-5. 奖励动画场景
-
-每个提示词要求：
-- 详细的风格描述（如：赛博朋克、卡通、写实等）
-- 色彩方案
-- 构图建议
-- 光影效果
-- 适合AI绘画的关键词
-
-请用以下格式输出：
-
-🎨 游戏主视觉提示词：
-[详细提示词]
-
-🎨 角色/符号提示词：
-[详细提示词]
-
-🎨 场景背景提示词：
-[详细提示词]
-
-🎨 特效动画提示词：
-[详细提示词]
-
-（请确保提示词适合Midjourney或Stable Diffusion等AI绘画工具使用）`
-    }
-  ];
-
-  try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: messages
-      })
-    });
-
-    const data = await res.json();
-
-    if (!data.success) {
-      throw new Error(data.details || data.error || "生成失败");
-    }
-
-    currentArtPrompt = data.content;
-    artOutput.textContent = currentArtPrompt;
-
-  } catch (err) {
-    artOutput.textContent = "❌ 生成失败：\n" + err.message;
-    console.error("错误详情:", err);
-  } finally {
-    setButtonsDisabled(false);
-  }
-});
-
-// 从策划案中提取美术部分
-async function extractArtPrompt(plan, theme) {
+  // 禁用按钮，显示加载状态
+  extractArtBtn.disabled = true;
+  extractArtBtn.innerHTML = '<span class="loading"></span> 提取中...';
   artOutput.textContent = "⏳ 正在从策划案中提取美术提示词...";
-  artSourceBadge.textContent = "从策划案提取";
+  
+  // 更新步骤到3
+  updateSteps(3);
+
+  const theme = themeInput.value.trim();
 
   const messages = [
     {
@@ -392,21 +538,34 @@ async function extractArtPrompt(plan, theme) {
       content: `请根据以下Slot游戏策划案，生成详细的AI绘画提示词。
 
 策划案内容：
-${plan}
+${currentPlan}
 
 主题：${theme}
 
 要求生成5-8个不同的美术提示词，覆盖以下方面：
-1. 游戏主视觉图
-2. 角色设计
-3. 场景背景
-4. 特殊符号图标
-5. 奖励动画场景
+1. 游戏主视觉图 - 用于游戏大厅展示
+2. 角色设计 - 主要角色或符号
+3. 场景背景 - 转轮背景
+4. 特殊符号图标 - Wild、Scatter等
+5. 奖励动画场景 - 中奖特效
 
-每个提示词要求包含详细的风格、色彩、构图、光影描述。
-请确保提示词适合Midjourney或Stable Diffusion等AI绘画工具使用。
+每个提示词要求包含：
+- 详细的风格描述（赛博朋克/卡通/写实/幻想等）
+- 色彩方案（主色调、配色）
+- 构图建议（视角、布局）
+- 光影效果（照明、氛围）
+- 技术参数（适合Midjourney/Stable Diffusion）
 
-请用清晰的格式输出。`
+请用以下格式清晰输出：
+
+🎨 【类型】游戏主视觉
+Prompt: [英文提示词]
+中文描述：[中文说明]
+适用场景：[具体用途]
+
+🎨 【类型】角色设计
+Prompt: [英文提示词]
+...`
     }
   ];
 
@@ -428,68 +587,59 @@ ${plan}
       throw new Error(data.details || data.error || "提取失败");
     }
 
+    // 保存美术提示词
     currentArtPrompt = data.content;
     artOutput.textContent = currentArtPrompt;
+    
+    // 显示复制按钮
+    copyArtBtn.style.display = "inline-block";
+    
+    showInfo("success", "美术提示词生成成功！可以复制到Midjourney等工具使用 ✨");
 
   } catch (err) {
     artOutput.textContent = "❌ 提取失败：\n" + err.message;
+    showInfo("warning", "提取失败：" + err.message);
     console.error("错误详情:", err);
-  }
-}
-
-// 重新生成美术提示词
-regenerateArtBtn.addEventListener("click", async () => {
-  const theme = themeInput.value.trim();
-  
-  if (!theme) {
-    alert("请输入游戏主题！");
-    return;
-  }
-
-  if (currentPlan) {
-    // 如果有策划案，基于策划案重新生成
-    await extractArtPrompt(currentPlan, theme);
-  } else {
-    // 如果没有策划案，直接生成
-    await generateArtPromptBtn.click();
+  } finally {
+    extractArtBtn.disabled = false;
+    extractArtBtn.innerHTML = '🎨 从策划案提取美术提示词';
   }
 });
 
-// 复制美术提示词
-copyArtPromptBtn.addEventListener("click", () => {
-  if (!currentArtPrompt) {
-    alert("没有可复制的美术提示词！");
-    return;
-  }
+// 复制策划案
+copyPlanBtn.addEventListener("click", () => {
+  if (!currentPlan) return;
   
-  navigator.clipboard.writeText(currentArtPrompt).then(() => {
-    const originalText = copyArtPromptBtn.textContent;
-    copyArtPromptBtn.textContent = "✅ 已复制！";
+  navigator.clipboard.writeText(currentPlan).then(() => {
+    const originalText = copyPlanBtn.textContent;
+    copyPlanBtn.textContent = "✅ 已复制！";
     setTimeout(() => {
-      copyArtPromptBtn.textContent = originalText;
+      copyPlanBtn.textContent = originalText;
     }, 2000);
+    showInfo("success", "策划案已复制到剪贴板");
   }).catch(err => {
-    alert("复制失败：" + err.message);
+    showInfo("warning", "复制失败：" + err.message);
   });
 });
 
-// 辅助函数：设置所有按钮的禁用状态
-function setButtonsDisabled(disabled) {
-  generateBtn.disabled = disabled;
-  generateArtPromptBtn.disabled = disabled;
-  regenerateArtBtn.disabled = disabled;
+// 复制美术提示词
+copyArtBtn.addEventListener("click", () => {
+  if (!currentArtPrompt) return;
   
-  if (disabled) {
-    generateBtn.textContent = "生成中...";
-    generateArtPromptBtn.textContent = "生成中...";
-  } else {
-    generateBtn.textContent = "🎮 生成完整策划案";
-    generateArtPromptBtn.textContent = "🎨 直接生成美术提示词";
-  }
-}
+  navigator.clipboard.writeText(currentArtPrompt).then(() => {
+    const originalText = copyArtBtn.textContent;
+    copyArtBtn.textContent = "✅ 已复制！";
+    setTimeout(() => {
+      copyArtBtn.textContent = originalText;
+    }, 2000);
+    showInfo("success", "提示词已复制到剪贴板");
+  }).catch(err => {
+    showInfo("warning", "复制失败：" + err.message);
+  });
+});
 
-// 初始化
-console.log("Slot AI Studio 已加载");
+// 初始化示例主题
+themeInput.value = "古埃及宝藏主题 Slot";
 </script>
 
 </body>
