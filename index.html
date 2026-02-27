@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>Slot AI Studio 完整流程+文件分析</title>
+  <title>Slot AI Studio - 文件参考生成策划案</title>
   <style>
     body { font-family: Arial; padding: 20px; }
     textarea { width: 100%; height: 80px; margin-bottom: 10px; }
@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<h1>Slot AI Studio 多模型+文件分析</h1>
+<h1>Slot AI Studio - 生成策划案（可上传参考文件）</h1>
 
 <!-- 模型选择 -->
 <label>选择模型:</label>
@@ -29,36 +29,23 @@
 <h2>Step 1: 输入 slot 游戏主题</h2>
 <textarea id="themeInput" placeholder="请输入 slot 游戏主题"></textarea>
 <br>
+
+<!-- 上传参考文件 -->
+<h2>Step 2: 上传参考策划案文件（TXT / JSON）</h2>
+<input type="file" id="referenceFile" />
+<br><br>
+
 <button id="generatePlanBtn">生成策划案</button>
 <pre id="planOutput">等待生成...</pre>
-
-<hr>
-
-<!-- UI 提示词生成 -->
-<h2>Step 2: 根据策划案生成 UI 提示词</h2>
-<button id="generateUIPromptBtn">生成 UI 提示词</button>
-<pre id="uiOutput">等待生成...</pre>
-
-<hr>
-
-<!-- 文件上传分析 -->
-<h2>Step 3: 上传文件分析</h2>
-<input type="file" id="fileInput" />
-<button id="analyzeFileBtn">上传分析文件</button>
-<pre id="fileOutput">等待上传分析...</pre>
 
 <script>
 const modelSelect = document.getElementById("modelSelect");
 const themeInput = document.getElementById("themeInput");
+const referenceFile = document.getElementById("referenceFile");
 const generatePlanBtn = document.getElementById("generatePlanBtn");
 const planOutput = document.getElementById("planOutput");
-const generateUIPromptBtn = document.getElementById("generateUIPromptBtn");
-const uiOutput = document.getElementById("uiOutput");
-const fileInput = document.getElementById("fileInput");
-const analyzeFileBtn = document.getElementById("analyzeFileBtn");
-const fileOutput = document.getElementById("fileOutput");
 
-// ⚙️ 配置 API Key + BaseURL
+// ⚙️ API Key + BaseURL 配置
 const apiKeys = {
   "deepseek/deepseek-v3.2-251201": "sk-367b04d6b9a8170fe6065263a3bf11bf17b6a3a8f5e39f446e168151d0f439a3",
   "anthropic/claude-v1": "YOUR_CLAUDE_API_KEY",
@@ -71,71 +58,33 @@ const baseURLs = {
   "gemini/gemini-1": "https://api.qnaigc.com"
 };
 
-// 通用调用函数
-async function callGenerateAPI(messages) {
-  const model = modelSelect.value;
-  const apiKey = apiKeys[model];
-  const baseURL = baseURLs[model];
-
-  try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      body: new URLSearchParams({ model, apiKey, baseURL, messages: JSON.stringify(messages) })
-    });
-    const data = await res.json();
-    return data.success ? data.content : `生成失败: ${data.error || "未知错误"}`;
-  } catch (err) {
-    return `请求出错: ${err.message}`;
-  }
-}
-
 // -------------------------
-// Step 1: 生成策划案
+// 点击生成策划案
 // -------------------------
 generatePlanBtn.addEventListener("click", async () => {
   const theme = themeInput.value.trim();
   if (!theme) return alert("请输入游戏主题！");
   planOutput.textContent = "生成中...";
 
-  const prompt = `请根据以下 slot 游戏主题生成详细策划案：\n主题：${theme}`;
-  const plan = await callGenerateAPI([{ role: "user", content: prompt }]);
-  planOutput.textContent = plan;
-});
-
-// -------------------------
-// Step 2: 生成 UI 提示词
-// -------------------------
-generateUIPromptBtn.addEventListener("click", async () => {
-  const plan = planOutput.textContent.trim();
-  if (!plan) return alert("请先生成策划案！");
-  uiOutput.textContent = "生成中...";
-
-  const prompt = `根据以下策划案生成详细 UI 提示词，包括主界面、按钮、图标、转轮、背景等：\n${plan}`;
-  const uiPrompts = await callGenerateAPI([{ role: "user", content: prompt }]);
-  uiOutput.textContent = uiPrompts;
-});
-
-// -------------------------
-// Step 3: 文件上传分析
-// -------------------------
-analyzeFileBtn.addEventListener("click", async () => {
-  const file = fileInput.files[0];
-  if (!file) return alert("请选择文件！");
-  fileOutput.textContent = "上传分析中...";
+  const messages = [{ role: "user", content: `请根据以下 slot 游戏主题生成详细策划案：\n主题：${theme}` }];
 
   const formData = new FormData();
-  formData.append("uploadFile", file);
   formData.append("model", modelSelect.value);
   formData.append("apiKey", apiKeys[modelSelect.value]);
   formData.append("baseURL", baseURLs[modelSelect.value]);
-  formData.append("messages", JSON.stringify([{ role: "user", content: "请分析上传的文件内容" }]));
+  formData.append("messages", JSON.stringify(messages));
+
+  // 如果上传了参考文件
+  if (referenceFile.files[0]) {
+    formData.append("referenceFile", referenceFile.files[0]);
+  }
 
   try {
     const res = await fetch("/api/generate", { method: "POST", body: formData });
     const data = await res.json();
-    fileOutput.textContent = data.success ? data.content : `分析失败: ${data.error || "未知错误"}`;
+    planOutput.textContent = data.success ? data.content : `生成失败: ${data.error || "未知错误"}`;
   } catch (err) {
-    fileOutput.textContent = `请求出错: ${err.message}`;
+    planOutput.textContent = `请求出错: ${err.message}`;
   }
 });
 </script>
