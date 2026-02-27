@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Slot AI Studio</title>
 <style>
-  /* 基础样式 */
+  /* 页面基础样式 */
   body { font-family: sans-serif; margin: 20px; background:#f0f0f0; }
   .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
   textarea { width: 100%; height: 100px; margin-bottom: 10px; padding: 10px; font-size: 16px; }
@@ -15,21 +15,21 @@
 <body>
 <div class="container">
   <h2>Slot AI Studio</h2>
-  
+
   <!-- 用户输入 slot 游戏主题 -->
   <label>游戏主题：</label>
   <textarea id="theme" placeholder="请输入 slot 游戏主题..."></textarea>
-  
+
   <!-- 模型选择 -->
   <label>选择模型：</label>
   <select id="modelSelect">
     <option value="deepseek/deepseek-v3.2-251201">DeepSeek V3.2</option>
     <!-- 后续可以添加更多模型 -->
   </select>
-  
+
   <br><br>
   <button id="sendBtn">生成策划案</button>
-  
+
   <!-- 输出结果区域 -->
   <div class="output" id="output"></div>
 </div>
@@ -43,21 +43,18 @@
 
   // 点击按钮事件
   sendBtn.addEventListener('click', async () => {
-    // 获取用户输入的主题
-    const theme = themeInput.value.trim();
-    const model = modelSelect.value;
+    const theme = themeInput.value.trim(); // 获取用户输入主题
+    const model = modelSelect.value;       // 获取选择的模型
 
-    // 如果没有输入主题，提示用户
     if (!theme) { 
       alert("请输入游戏主题！"); 
       return; 
     }
 
-    // 显示 loading 信息
-    output.textContent = "生成中，请稍候...";
+    output.textContent = "生成中，请稍候..."; // 显示 loading
 
     try {
-      // 调用我们自己写的 serverless function，不在前端写 apiKey
+      // 调用 serverless function，不在前端写 apiKey
       const res = await fetch('/api/generate', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,19 +64,16 @@
         })
       });
 
-      // 解析返回的 JSON
       const data = await res.json();
 
-      // 如果成功显示模型返回内容
+      // 显示返回内容
       if(data.success){
         output.textContent = data.content;
       } else {
-        // 如果接口返回错误，显示详细信息
         output.textContent = JSON.stringify(data, null, 2);
       }
 
     } catch (err) {
-      // 捕获请求错误
       output.textContent = "调用失败：" + err.message;
     }
   });
