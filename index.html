@@ -2,114 +2,143 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>Slot AI Studio 完整流程示例</title>
+  <title>Slot AI Studio 完整流程+文件分析</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
+    body { font-family: Arial; padding: 20px; }
     textarea { width: 100%; height: 80px; margin-bottom: 10px; }
-    button { padding: 10px 20px; margin-right: 10px; font-size: 16px; }
+    select, button { padding: 10px; margin-right: 10px; font-size: 16px; }
     pre { background: #f0f0f0; padding: 10px; white-space: pre-wrap; }
     hr { margin: 20px 0; }
   </style>
 </head>
 <body>
 
-  <h1>Slot AI Studio 流程演示</h1>
+<h1>Slot AI Studio 多模型+文件分析</h1>
 
-  <!-- 步骤 1：输入 slot 游戏主题 -->
-  <h2>Step 1: 输入游戏主题</h2>
-  <textarea id="themeInput" placeholder="请输入 slot 游戏主题，例如：魔法奇幻水果机"></textarea>
-  <br>
-  <button id="generatePlanBtn">生成策划案</button>
+<!-- 模型选择 -->
+<label>选择模型:</label>
+<select id="modelSelect">
+  <option value="deepseek/deepseek-v3.2-251201">DeepSeek V3.2</option>
+  <option value="anthropic/claude-v1">Claude V1</option>
+  <option value="gemini/gemini-1">Gemini-1</option>
+</select>
 
-  <!-- 步骤 2：显示策划案 -->
-  <h2>生成的游戏策划案：</h2>
-  <pre id="planOutput">等待生成...</pre>
+<hr>
 
-  <hr>
+<!-- 游戏主题输入 -->
+<h2>Step 1: 输入 slot 游戏主题</h2>
+<textarea id="themeInput" placeholder="请输入 slot 游戏主题"></textarea>
+<br>
+<button id="generatePlanBtn">生成策划案</button>
+<pre id="planOutput">等待生成...</pre>
 
-  <!-- 步骤 3：生成 UI 提示词 -->
-  <h2>Step 2: 根据策划案生成 UI 提示词</h2>
-  <button id="generateUIPromptBtn">生成 UI 提示词</button>
+<hr>
 
-  <!-- 步骤 4：显示 UI 提示词 -->
-  <h2>生成的 UI 提示词：</h2>
-  <pre id="uiOutput">等待生成...</pre>
+<!-- UI 提示词生成 -->
+<h2>Step 2: 根据策划案生成 UI 提示词</h2>
+<button id="generateUIPromptBtn">生成 UI 提示词</button>
+<pre id="uiOutput">等待生成...</pre>
 
-  <script>
-    // -------------------------------
-    // 前端元素
-    // -------------------------------
-    const themeInput = document.getElementById("themeInput");
-    const generatePlanBtn = document.getElementById("generatePlanBtn");
-    const planOutput = document.getElementById("planOutput");
-    const generateUIPromptBtn = document.getElementById("generateUIPromptBtn");
-    const uiOutput = document.getElementById("uiOutput");
+<hr>
 
-    // -------------------------------
-    // 调用后端函数的通用方法
-    // -------------------------------
-    async function callGenerateAPI(promptText) {
-      try {
-        // 调用 Vercel Serverless Function
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "deepseek/deepseek-v3.2-251201",
-            messages: [{ role: "user", content: promptText }]
-          })
-        });
+<!-- 文件上传分析 -->
+<h2>Step 3: 上传文件分析</h2>
+<input type="file" id="fileInput" />
+<button id="analyzeFileBtn">上传分析文件</button>
+<pre id="fileOutput">等待上传分析...</pre>
 
-        const data = await res.json();
-        if (data.success) return data.content;
-        else return `生成失败: ${data.error || "未知错误"}`;
-      } catch (err) {
-        return `请求出错: ${err.message}`;
-      }
-    }
+<script>
+const modelSelect = document.getElementById("modelSelect");
+const themeInput = document.getElementById("themeInput");
+const generatePlanBtn = document.getElementById("generatePlanBtn");
+const planOutput = document.getElementById("planOutput");
+const generateUIPromptBtn = document.getElementById("generateUIPromptBtn");
+const uiOutput = document.getElementById("uiOutput");
+const fileInput = document.getElementById("fileInput");
+const analyzeFileBtn = document.getElementById("analyzeFileBtn");
+const fileOutput = document.getElementById("fileOutput");
 
-    // -------------------------------
-    // Step 1: 生成策划案
-    // -------------------------------
-    generatePlanBtn.addEventListener("click", async () => {
-      const theme = themeInput.value.trim();
-      if (!theme) {
-        alert("请输入游戏主题！");
-        return;
-      }
+// ⚙️ 配置 API Key + BaseURL
+const apiKeys = {
+  "deepseek/deepseek-v3.2-251201": "sk-367b04d6b9a8170fe6065263a3bf11bf17b6a3a8f5e39f446e168151d0f439a3",
+  "anthropic/claude-v1": "YOUR_CLAUDE_API_KEY",
+  "gemini/gemini-1": "YOUR_GEMINI_API_KEY"
+};
 
-      planOutput.textContent = "策划案生成中...";
+const baseURLs = {
+  "deepseek/deepseek-v3.2-251201": "https://api.qnaigc.com/v1",
+  "anthropic/claude-v1": "https://api.qnaigc.com",
+  "gemini/gemini-1": "https://api.qnaigc.com"
+};
 
-      // 构造 prompt 给模型生成策划案
-      const prompt = `请根据以下 slot 游戏主题生成详细的游戏策划案，涵盖玩法、关卡、奖励、特色元素等：\n主题：${theme}`;
+// 通用调用函数
+async function callGenerateAPI(messages) {
+  const model = modelSelect.value;
+  const apiKey = apiKeys[model];
+  const baseURL = baseURLs[model];
 
-      const plan = await callGenerateAPI(prompt);
-      planOutput.textContent = plan;
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      body: new URLSearchParams({ model, apiKey, baseURL, messages: JSON.stringify(messages) })
     });
+    const data = await res.json();
+    return data.success ? data.content : `生成失败: ${data.error || "未知错误"}`;
+  } catch (err) {
+    return `请求出错: ${err.message}`;
+  }
+}
 
-    // -------------------------------
-    // Step 2: 根据策划案生成 UI 提示词
-    // -------------------------------
-    generateUIPromptBtn.addEventListener("click", async () => {
-      const plan = planOutput.textContent.trim();
-      if (!plan || plan === "等待生成..." || plan === "策划案生成中...") {
-        alert("请先生成策划案！");
-        return;
-      }
+// -------------------------
+// Step 1: 生成策划案
+// -------------------------
+generatePlanBtn.addEventListener("click", async () => {
+  const theme = themeInput.value.trim();
+  if (!theme) return alert("请输入游戏主题！");
+  planOutput.textContent = "生成中...";
 
-      uiOutput.textContent = "UI 提示词生成中...";
+  const prompt = `请根据以下 slot 游戏主题生成详细策划案：\n主题：${theme}`;
+  const plan = await callGenerateAPI([{ role: "user", content: prompt }]);
+  planOutput.textContent = plan;
+});
 
-      // 构造 prompt 给模型生成每个 UI 元素提示词
-      const prompt = `根据以下 slot 游戏策划案内容，生成详细的 UI 界面提示词，包含主界面、按钮、图标、转轮、背景等每个部分的描述，方便 AI 绘图生成：
-      
-策划案内容：
-${plan}`;
+// -------------------------
+// Step 2: 生成 UI 提示词
+// -------------------------
+generateUIPromptBtn.addEventListener("click", async () => {
+  const plan = planOutput.textContent.trim();
+  if (!plan) return alert("请先生成策划案！");
+  uiOutput.textContent = "生成中...";
 
-      const uiPrompts = await callGenerateAPI(prompt);
-      uiOutput.textContent = uiPrompts;
-    });
+  const prompt = `根据以下策划案生成详细 UI 提示词，包括主界面、按钮、图标、转轮、背景等：\n${plan}`;
+  const uiPrompts = await callGenerateAPI([{ role: "user", content: prompt }]);
+  uiOutput.textContent = uiPrompts;
+});
 
-  </script>
+// -------------------------
+// Step 3: 文件上传分析
+// -------------------------
+analyzeFileBtn.addEventListener("click", async () => {
+  const file = fileInput.files[0];
+  if (!file) return alert("请选择文件！");
+  fileOutput.textContent = "上传分析中...";
+
+  const formData = new FormData();
+  formData.append("uploadFile", file);
+  formData.append("model", modelSelect.value);
+  formData.append("apiKey", apiKeys[modelSelect.value]);
+  formData.append("baseURL", baseURLs[modelSelect.value]);
+  formData.append("messages", JSON.stringify([{ role: "user", content: "请分析上传的文件内容" }]));
+
+  try {
+    const res = await fetch("/api/generate", { method: "POST", body: formData });
+    const data = await res.json();
+    fileOutput.textContent = data.success ? data.content : `分析失败: ${data.error || "未知错误"}`;
+  } catch (err) {
+    fileOutput.textContent = `请求出错: ${err.message}`;
+  }
+});
+</script>
 
 </body>
 </html>
