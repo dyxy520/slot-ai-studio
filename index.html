@@ -2,43 +2,53 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>Slot AI Studio 测试界面</title>
+  <title>Slot AI Studio 完整流程示例</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
-    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-    button { padding: 10px 20px; font-size: 16px; }
-    pre { background: #f0f0f0; padding: 10px; }
+    textarea { width: 100%; height: 80px; margin-bottom: 10px; }
+    button { padding: 10px 20px; margin-right: 10px; font-size: 16px; }
+    pre { background: #f0f0f0; padding: 10px; white-space: pre-wrap; }
+    hr { margin: 20px 0; }
   </style>
 </head>
 <body>
 
-  <h1>Slot AI Studio 测试界面</h1>
+  <h1>Slot AI Studio 流程演示</h1>
 
-  <!-- 输入框：用户输入消息 -->
-  <textarea id="userInput" placeholder="请输入你的问题或指令"></textarea>
+  <!-- 步骤 1：输入 slot 游戏主题 -->
+  <h2>Step 1: 输入游戏主题</h2>
+  <textarea id="themeInput" placeholder="请输入 slot 游戏主题，例如：魔法奇幻水果机"></textarea>
+  <br>
+  <button id="generatePlanBtn">生成策划案</button>
 
-  <!-- 生成按钮 -->
-  <button id="generateBtn">生成 AI 回复</button>
+  <!-- 步骤 2：显示策划案 -->
+  <h2>生成的游戏策划案：</h2>
+  <pre id="planOutput">等待生成...</pre>
 
-  <!-- 显示模型回复 -->
-  <h2>模型回复：</h2>
-  <pre id="output">等待生成...</pre>
+  <hr>
+
+  <!-- 步骤 3：生成 UI 提示词 -->
+  <h2>Step 2: 根据策划案生成 UI 提示词</h2>
+  <button id="generateUIPromptBtn">生成 UI 提示词</button>
+
+  <!-- 步骤 4：显示 UI 提示词 -->
+  <h2>生成的 UI 提示词：</h2>
+  <pre id="uiOutput">等待生成...</pre>
 
   <script>
-    const generateBtn = document.getElementById("generateBtn");
-    const userInput = document.getElementById("userInput");
-    const output = document.getElementById("output");
+    // -------------------------------
+    // 前端元素
+    // -------------------------------
+    const themeInput = document.getElementById("themeInput");
+    const generatePlanBtn = document.getElementById("generatePlanBtn");
+    const planOutput = document.getElementById("planOutput");
+    const generateUIPromptBtn = document.getElementById("generateUIPromptBtn");
+    const uiOutput = document.getElementById("uiOutput");
 
-    generateBtn.addEventListener("click", async () => {
-      const message = userInput.value.trim();
-      if (!message) {
-        alert("请输入内容！");
-        return;
-      }
-
-      // 显示加载中
-      output.textContent = "生成中...";
-
+    // -------------------------------
+    // 调用后端函数的通用方法
+    // -------------------------------
+    async function callGenerateAPI(promptText) {
       try {
         // 调用 Vercel Serverless Function
         const res = await fetch("/api/generate", {
@@ -46,22 +56,60 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "deepseek/deepseek-v3.2-251201",
-            messages: [{ role: "user", content: message }]
+            messages: [{ role: "user", content: promptText }]
           })
         });
 
         const data = await res.json();
-
-        if (data.success) {
-          output.textContent = data.content; // 显示 AI 回复
-        } else {
-          output.textContent = `生成失败: ${data.error || "未知错误"}`;
-        }
-
+        if (data.success) return data.content;
+        else return `生成失败: ${data.error || "未知错误"}`;
       } catch (err) {
-        output.textContent = `请求出错: ${err.message}`;
+        return `请求出错: ${err.message}`;
       }
+    }
+
+    // -------------------------------
+    // Step 1: 生成策划案
+    // -------------------------------
+    generatePlanBtn.addEventListener("click", async () => {
+      const theme = themeInput.value.trim();
+      if (!theme) {
+        alert("请输入游戏主题！");
+        return;
+      }
+
+      planOutput.textContent = "策划案生成中...";
+
+      // 构造 prompt 给模型生成策划案
+      const prompt = `请根据以下 slot 游戏主题生成详细的游戏策划案，涵盖玩法、关卡、奖励、特色元素等：\n主题：${theme}`;
+
+      const plan = await callGenerateAPI(prompt);
+      planOutput.textContent = plan;
     });
+
+    // -------------------------------
+    // Step 2: 根据策划案生成 UI 提示词
+    // -------------------------------
+    generateUIPromptBtn.addEventListener("click", async () => {
+      const plan = planOutput.textContent.trim();
+      if (!plan || plan === "等待生成..." || plan === "策划案生成中...") {
+        alert("请先生成策划案！");
+        return;
+      }
+
+      uiOutput.textContent = "UI 提示词生成中...";
+
+      // 构造 prompt 给模型生成每个 UI 元素提示词
+      const prompt = `根据以下 slot 游戏策划案内容，生成详细的 UI 界面提示词，包含主界面、按钮、图标、转轮、背景等每个部分的描述，方便 AI 绘图生成：
+      
+策划案内容：
+${plan}`;
+
+      const uiPrompts = await callGenerateAPI(prompt);
+      uiOutput.textContent = uiPrompts;
+    });
+
   </script>
+
 </body>
 </html>
