@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Slot AI Studio - 自定义格式</title>
+  <title>Slot AI Studio - 多工具支持</title>
   <style>
     * {
       margin: 0;
@@ -129,7 +129,18 @@
       font-size: 12px;
     }
 
-    textarea, input { 
+    .input-group label .tool-badge {
+      background: #f0f0f0;
+      color: #666;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 10px;
+      font-weight: normal;
+      text-transform: none;
+    }
+
+    textarea, input, select { 
       width: 100%; 
       padding: 15px;
       border: 2px solid #e0e0e0;
@@ -150,10 +161,20 @@
       font-size: 14px;
     }
 
-    textarea:focus, input:focus {
+    textarea:focus, input:focus, select:focus {
       outline: none;
       border-color: #667eea;
       box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+
+    select {
+      background: white;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      background-size: 15px;
     }
 
     /* 格式预设卡片 */
@@ -185,6 +206,108 @@
       background: #667eea;
       color: white;
       border-color: #667eea;
+    }
+
+    /* 工具选择区域 */
+    .tool-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .tool-card {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .tool-card.selected {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+    }
+
+    .tool-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .tool-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .tool-desc {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* 参数滑块 */
+    .param-slider {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 12px;
+    }
+
+    .param-slider label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    .param-slider input[type="range"] {
+      width: 100%;
+      padding: 0;
+    }
+
+    /* 标签页样式 */
+    .tool-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 10px;
+    }
+
+    .tool-tab {
+      padding: 8px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .tool-tab:hover {
+      background: #f0f0f0;
+    }
+
+    .tool-tab.active {
+      background: #667eea;
+      color: white;
+    }
+
+    /* 提示词示例 */
+    .prompt-example {
+      background: #f0f0f0;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #666;
+      border-left: 3px solid #667eea;
     }
 
     /* 展开/折叠按钮 */
@@ -370,6 +493,10 @@
       .btn {
         min-width: 100%;
       }
+
+      .tool-selector {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
   </style>
 </head>
@@ -401,7 +528,6 @@
         <span class="optional">(可选，自定义输出格式)</span>
       </label>
       
-      <!-- 格式预设按钮 -->
       <div class="format-presets">
         <button class="preset-btn active" data-preset="standard">📊 标准格式</button>
         <button class="preset-btn" data-preset="detailed">📑 详细格式</button>
@@ -409,35 +535,11 @@
         <button class="preset-btn" data-preset="technical">🔧 技术格式</button>
       </div>
 
-      <!-- 展开/折叠按钮 -->
       <button class="toggle-format" id="toggleFormatBtn">
         <span>▼</span> 自定义格式
       </button>
 
-      <!-- 格式输入框 (默认隐藏) -->
-      <textarea id="formatInput" class="format-input" style="display: none;" placeholder="在这里自定义策划案格式要求...
-
-例如：
-请严格按照以下格式输出：
-
-# 【游戏名称】
-## 1. 游戏背景
-[要求：包含世界观、时代背景、故事情节]
-
-## 2. 核心玩法
-[要求：基本规则、特殊机制、奖励游戏]
-
-## 3. 符号系统
-- 普通符号：[要求]
-- 特殊符号：[要求]
-
-## 4. 奖励设计
-[要求：基础奖励、大奖机制、累积奖金]
-
-## 5. 技术参数
-- RTP范围：[要求]
-- 波动性：[要求]
-- 下注范围：[要求]"></textarea>
+      <textarea id="formatInput" class="format-input" style="display: none;" placeholder="在这里自定义策划案格式要求..."></textarea>
     </div>
 
     <div class="button-group">
@@ -469,11 +571,61 @@
     </div>
   </div>
 
-  <!-- 第三步：美术提示词卡片 -->
+  <!-- 第三步：美术提示词卡片（带工具选择） -->
   <div class="card" id="step3Card" style="opacity: 0.5; pointer-events: none;">
     <div class="card-header">
       <div class="step-badge">3</div>
       <h2>美术提示词</h2>
+    </div>
+
+    <!-- AI绘画工具选择 -->
+    <div class="input-group">
+      <label>
+        🎨 选择AI绘画工具
+        <span class="tool-badge" id="selectedToolBadge">当前选择: Midjourney</span>
+      </label>
+      
+      <div class="tool-selector">
+        <div class="tool-card selected" data-tool="midjourney" onclick="selectTool('midjourney')">
+          <div class="tool-icon">🎨</div>
+          <div class="tool-name">Midjourney</div>
+          <div class="tool-desc">适合艺术风格、创意设计</div>
+        </div>
+        <div class="tool-card" data-tool="sd" onclick="selectTool('sd')">
+          <div class="tool-icon">🌌</div>
+          <div class="tool-name">Stable Diffusion</div>
+          <div class="tool-desc">适合写实、精细控制</div>
+        </div>
+        <div class="tool-card" data-tool="dalle" onclick="selectTool('dalle')">
+          <div class="tool-icon">🖼️</div>
+          <div class="tool-name">DALL-E 3</div>
+          <div class="tool-desc">适合创意、自然语言</div>
+        </div>
+        <div class="tool-card" data-tool="novelai" onclick="selectTool('novelai')">
+          <div class="tool-icon">✨</div>
+          <div class="tool-name">NovelAI</div>
+          <div class="tool-desc">适合二次元、动漫风格</div>
+        </div>
+      </div>
+
+      <!-- 工具参数调节（根据选择的工具动态显示） -->
+      <div class="param-slider" id="paramSlider" style="display: none;">
+        <label>
+          <span>风格化程度 (--stylize)</span>
+          <span id="styleValue">100</span>
+        </label>
+        <input type="range" id="styleSlider" min="0" max="1000" value="100" step="10">
+        
+        <label style="margin-top: 15px;">
+          <span>怪异度 (--weird)</span>
+          <span id="weirdValue">0</span>
+        </label>
+        <input type="range" id="weirdSlider" min="0" max="3000" value="0" step="10">
+        
+        <div class="prompt-example" id="toolExample">
+          <strong>示例格式:</strong> /imagine prompt [描述] --ar 16:9 --v 6.0
+        </div>
+      </div>
     </div>
 
     <div class="content-area">
@@ -501,6 +653,13 @@ const copyArtBtn = document.getElementById("copyArtBtn");
 const planOutput = document.getElementById("planOutput");
 const artOutput = document.getElementById("artOutput");
 const infoMessage = document.getElementById("infoMessage");
+const selectedToolBadge = document.getElementById("selectedToolBadge");
+const paramSlider = document.getElementById("paramSlider");
+const styleSlider = document.getElementById("styleSlider");
+const weirdSlider = document.getElementById("weirdSlider");
+const styleValue = document.getElementById("styleValue");
+const weirdValue = document.getElementById("weirdValue");
+const toolExample = document.getElementById("toolExample");
 
 // 步骤元素
 const step1 = document.getElementById("step1");
@@ -517,6 +676,7 @@ const presetBtns = document.querySelectorAll('.preset-btn');
 let currentPlan = "";
 let currentArtPrompt = "";
 let currentFormat = "";
+let selectedTool = "midjourney"; // 默认选择Midjourney
 
 // 固定的模型配置
 const MODEL = "deepseek/deepseek-v3.2-251201";
@@ -620,6 +780,74 @@ const formatPresets = {
 - 可选RTP：`
 };
 
+// AI工具配置
+const toolConfig = {
+  midjourney: {
+    name: 'Midjourney',
+    icon: '🎨',
+    format: '/imagine prompt [描述] --ar 16:9 --v 6.0',
+    params: ['stylize', 'weird', 'chaos'],
+    description: '适合艺术风格、创意设计',
+    promptRequirements: '需要详细的风格描述、色彩方案、构图建议，使用英文描述最佳'
+  },
+  sd: {
+    name: 'Stable Diffusion',
+    icon: '🌌',
+    format: '[描述], masterpiece, best quality, high resolution, 8k, detailed',
+    params: ['cfg_scale', 'steps', 'sampler'],
+    description: '适合写实、精细控制',
+    promptRequirements: '需要正向提示词和负向提示词，包含技术参数如masterpiece, best quality'
+  },
+  dalle: {
+    name: 'DALL-E 3',
+    icon: '🖼️',
+    format: '[自然语言描述]',
+    params: ['quality', 'style'],
+    description: '适合创意、自然语言',
+    promptRequirements: '使用自然语言描述，可以包含风格参考和艺术家名字'
+  },
+  novelai: {
+    name: 'NovelAI',
+    icon: '✨',
+    format: '{ [描述] }',
+    params: ['scale', 'sampler', 'steps'],
+    description: '适合二次元、动漫风格',
+    promptRequirements: '需要动漫风格描述，可以包含角色特征和场景'
+  }
+};
+
+// 选择工具
+window.selectTool = function(tool) {
+  selectedTool = tool;
+  
+  // 更新卡片选中状态
+  document.querySelectorAll('.tool-card').forEach(card => {
+    if (card.dataset.tool === tool) {
+      card.classList.add('selected');
+    } else {
+      card.classList.remove('selected');
+    }
+  });
+  
+  // 更新徽章
+  selectedToolBadge.textContent = `当前选择: ${toolConfig[tool].name}`;
+  
+  // 显示参数滑块（仅Midjourney有）
+  if (tool === 'midjourney') {
+    paramSlider.style.display = 'block';
+  } else {
+    paramSlider.style.display = 'none';
+  }
+  
+  // 更新示例
+  toolExample.innerHTML = `<strong>${toolConfig[tool].name} 格式示例:</strong> ${toolConfig[tool].format}`;
+  
+  // 如果已经有生成的内容，提示重新生成
+  if (currentArtPrompt) {
+    showInfo('info', `已切换到 ${toolConfig[tool].name}，点击"从策划案提取美术提示词"重新生成适合该工具的提示词`);
+  }
+};
+
 // 切换格式输入框显示/隐藏
 toggleFormatBtn.addEventListener("click", () => {
   if (formatInput.style.display === "none") {
@@ -634,22 +862,17 @@ toggleFormatBtn.addEventListener("click", () => {
 // 预设按钮点击事件
 presetBtns.forEach(btn => {
   btn.addEventListener("click", () => {
-    // 移除所有active类
     presetBtns.forEach(b => b.classList.remove("active"));
-    // 添加active类到当前按钮
     btn.classList.add("active");
     
-    // 获取预设值并填充到格式输入框
     const preset = btn.dataset.preset;
     formatInput.value = formatPresets[preset];
     
-    // 自动展开格式输入框
     if (formatInput.style.display === "none") {
       formatInput.style.display = "block";
       toggleFormatBtn.innerHTML = '<span>▲</span> 隐藏自定义格式';
     }
     
-    // 保存当前格式
     currentFormat = formatPresets[preset];
   });
 });
@@ -705,7 +928,6 @@ startGenerateBtn.addEventListener("click", async () => {
   
   updateSteps(2);
 
-  // 构建提示词
   let formatInstruction = "";
   if (customFormat) {
     formatInstruction = `\n\n请严格按照以下格式要求输出：\n${customFormat}`;
@@ -765,7 +987,7 @@ startGenerateBtn.addEventListener("click", async () => {
   }
 });
 
-// 第二步：提取美术提示词
+// 第二步：提取美术提示词（带工具选择）
 extractArtBtn.addEventListener("click", async () => {
   if (!currentPlan) {
     showInfo("warning", "请先生成策划案！");
@@ -774,16 +996,35 @@ extractArtBtn.addEventListener("click", async () => {
 
   extractArtBtn.disabled = true;
   extractArtBtn.innerHTML = '<span class="loading"></span> 提取中...';
-  artOutput.textContent = "⏳ 正在从策划案中提取美术提示词...";
+  artOutput.textContent = "⏳ 正在根据选择的工具生成提示词...";
   
   updateSteps(3);
 
   const theme = themeInput.value.trim();
+  const tool = toolConfig[selectedTool];
+  
+  // 获取参数值
+  const stylize = styleSlider.value;
+  const weird = weirdSlider.value;
+
+  // 根据选择的工具构建提示词要求
+  let toolInstruction = `请为 ${tool.name} 生成AI绘画提示词。
+
+工具特点：${tool.description}
+格式要求：${tool.format}
+${tool.promptRequirements}`;
+
+  if (selectedTool === 'midjourney') {
+    toolInstruction += `\n\n参数建议：
+- 风格化程度: ${stylize}
+- 怪异度: ${weird}
+请根据这些参数调整提示词。`;
+  }
 
   const messages = [
     {
       role: "user",
-      content: `请根据以下Slot游戏策划案，生成详细的AI绘画提示词。
+      content: `请根据以下Slot游戏策划案，${toolInstruction}
 
 策划案内容：
 ${currentPlan}
@@ -797,22 +1038,15 @@ ${currentPlan}
 4. 特殊符号图标 - Wild、Scatter等
 5. 奖励动画场景 - 中奖特效
 
-每个提示词要求包含：
-- 详细的风格描述（赛博朋克/卡通/写实/幻想等）
-- 色彩方案（主色调、配色）
-- 构图建议（视角、布局）
-- 光影效果（照明、氛围）
-- 技术参数（适合Midjourney/Stable Diffusion）
-
 请用以下格式清晰输出：
 
 🎨 【类型】游戏主视觉
-Prompt: [英文提示词]
+Prompt: [适合${tool.name}的提示词]
 中文描述：[中文说明]
 适用场景：[具体用途]
 
 🎨 【类型】角色设计
-Prompt: [英文提示词]
+Prompt: [适合${tool.name}的提示词]
 ...`
     }
   ];
@@ -840,7 +1074,7 @@ Prompt: [英文提示词]
     
     copyArtBtn.style.display = "inline-block";
     
-    showInfo("success", "美术提示词生成成功！可以复制到Midjourney等工具使用 ✨");
+    showInfo("success", `已为 ${tool.name} 生成提示词！可以复制使用 ✨`);
 
   } catch (err) {
     artOutput.textContent = "❌ 提取失败：\n" + err.message;
@@ -850,6 +1084,15 @@ Prompt: [英文提示词]
     extractArtBtn.disabled = false;
     extractArtBtn.innerHTML = '🎨 从策划案提取美术提示词';
   }
+});
+
+// 参数滑块事件
+styleSlider.addEventListener("input", () => {
+  styleValue.textContent = styleSlider.value;
+});
+
+weirdSlider.addEventListener("input", () => {
+  weirdValue.textContent = weirdSlider.value;
 });
 
 // 复制策划案
@@ -877,19 +1120,4 @@ copyArtBtn.addEventListener("click", () => {
     copyArtBtn.textContent = "✅ 已复制！";
     setTimeout(() => {
       copyArtBtn.textContent = originalText;
-    }, 2000);
-    showInfo("success", "提示词已复制到剪贴板");
-  }).catch(err => {
-    showInfo("warning", "复制失败：" + err.message);
-  });
-});
-
-// 初始化
-themeInput.value = "古埃及宝藏主题 Slot";
-// 默认选中标准格式
-formatInput.value = formatPresets.standard;
-currentFormat = formatPresets.standard;
-</script>
-
-</body>
-</html>
+   
