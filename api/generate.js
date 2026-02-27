@@ -1,11 +1,11 @@
 export default async function handler(req, res) {
 
-  // ✅ 允许跨域
+  // 允许跨域
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // 处理浏览器预检请求
+  // 处理预检请求
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -31,11 +31,15 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
+    // 安全取出模型返回
+    const content = data.providerResponse?.choices?.[0]?.message?.content || "";
+    const usage = data.providerResponse?.usage || {};
+
     return res.status(200).json({
-  "success": true,
-  "content": "...模型回复...",
-  "usage": {...}
-});
+      success: true,
+      content,
+      usage
+    });
 
   } catch (error) {
     return res.status(500).json({
