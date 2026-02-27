@@ -2,57 +2,105 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slot AI Studio</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-    select, button { padding: 10px; margin-right: 10px; font-size: 16px; }
-    pre { background: #f0f0f0; padding: 10px; white-space: pre-wrap; }
-    hr { margin: 20px 0; }
+    body { 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      padding: 20px; 
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { 
+      color: #333;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    textarea { 
+      width: 100%; 
+      height: 120px; 
+      margin: 10px 0 20px; 
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+      resize: vertical;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #4CAF50;
+      box-shadow: 0 0 5px rgba(76,175,80,0.3);
+    }
+    button { 
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    pre { 
+      background: #f8f9fa; 
+      padding: 20px; 
+      border-radius: 5px;
+      white-space: pre-wrap; 
+      font-size: 14px;
+      line-height: 1.6;
+      border: 1px solid #e9ecef;
+      min-height: 200px;
+    }
+    hr { 
+      margin: 30px 0; 
+      border: none;
+      border-top: 1px solid #dee2e6;
+    }
+    .info {
+      color: #6c757d;
+      font-size: 14px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
+<div class="container">
+  <h1>🎰 Slot AI Studio</h1>
 
-<h1>🎰 Slot AI Studio</h1>
+  <h2>输入 Slot 游戏主题</h2>
+  <textarea id="themeInput" placeholder="例如：古埃及宝藏主题 Slot&#10;或者：海洋冒险主题 Slot&#10;或者：水果乐园主题 Slot"></textarea>
+  <br>
+  <button id="generateBtn">生成策划案</button>
+  <div class="info">使用 DeepSeek V3.2 模型生成</div>
 
-<!-- 模型选择 -->
-<label>选择模型:</label>
-<select id="modelSelect">
-  <option value="deepseek/deepseek-v3.2-251201">DeepSeek V3.2</option>
-  <option value="anthropic/claude-v1">Claude V1</option>
-  <option value="gemini/gemini-1">Gemini-1</option>
-</select>
+  <hr>
 
-<hr>
-
-<h2>输入 Slot 游戏主题</h2>
-<textarea id="themeInput" placeholder="例如：古埃及宝藏主题 Slot"></textarea>
-<br>
-<button id="generateBtn">生成策划案</button>
-
-<hr>
-
-<h2>生成结果</h2>
-<pre id="output">等待生成...</pre>
+  <h2>生成结果</h2>
+  <pre id="output">等待生成...</pre>
+</div>
 
 <script>
-const modelSelect = document.getElementById("modelSelect");
 const themeInput = document.getElementById("themeInput");
 const generateBtn = document.getElementById("generateBtn");
 const output = document.getElementById("output");
 
-// API Key 和 BaseURL 配置
-const apiKeys = {
-  "deepseek/deepseek-v3.2-251201": "你的DeepSeekKey",
-  "anthropic/claude-v1": "你的ClaudeKey",
-  "gemini/gemini-1": "你的GeminiKey"
-};
-
-const baseURLs = {
-  "deepseek/deepseek-v3.2-251201": "https://api.qnaigc.com/v1",
-  "anthropic/claude-v1": "https://api.qnaigc.com",
-  "gemini/gemini-1": "https://api.qnaigc.com"
-};
+// 固定的模型配置
+const MODEL = "deepseek/deepseek-v3.2-251201";
+const BASE_URL = "https://api.qnaigc.com/v1";
 
 generateBtn.addEventListener("click", async () => {
   const theme = themeInput.value.trim();
@@ -62,14 +110,26 @@ generateBtn.addEventListener("click", async () => {
     return;
   }
 
-  output.textContent = "生成中...";
-
-  const model = modelSelect.value;
+  // 禁用按钮，防止重复提交
+  generateBtn.disabled = true;
+  generateBtn.textContent = "生成中...";
+  output.textContent = "⏳ 正在生成策划案，请稍候...";
 
   const messages = [
     {
       role: "user",
-      content: `请根据以下主题生成详细的 Slot 游戏策划案：\n\n主题：${theme}\n\n要求包含：\n1. 游戏背景\n2. 玩法机制\n3. 奖励设计\n4. 特殊符号设计\n5. RTP 建议`
+      content: `请根据以下主题生成详细的 Slot 游戏策划案：
+
+主题：${theme}
+
+要求包含：
+1. 游戏背景（世界观、故事情节）
+2. 玩法机制（基本规则、特殊玩法）
+3. 奖励设计（普通奖励、大奖机制）
+4. 特殊符号设计（Wild、Scatter、Bonus等）
+5. RTP 建议（合理的回报率范围）
+
+请用专业、详细的方式输出，使用Markdown格式。`
     }
   ];
 
@@ -80,24 +140,27 @@ generateBtn.addEventListener("click", async () => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model,
-        baseURL: baseURLs[model],
-        apiKey: apiKeys[model],
-        messages
+        model: MODEL,
+        messages: messages
       })
     });
 
     const data = await res.json();
 
     if (!data.success) {
-      output.textContent = "生成失败：\n" + (data.error || "未知错误");
-      return;
+      throw new Error(data.error || data.details || "生成失败");
     }
 
+    // 格式化输出
     output.textContent = data.content;
 
   } catch (err) {
-    output.textContent = "请求出错：\n" + err.message;
+    output.textContent = "❌ 生成失败：\n" + err.message;
+    console.error("错误详情:", err);
+  } finally {
+    // 恢复按钮状态
+    generateBtn.disabled = false;
+    generateBtn.textContent = "生成策划案";
   }
 });
 </script>
