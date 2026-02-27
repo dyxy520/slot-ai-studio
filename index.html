@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Slot AI Studio - 两步生成</title>
+  <title>Slot AI Studio - 自定义格式</title>
   <style>
     * {
       margin: 0;
@@ -19,7 +19,7 @@
     }
 
     .container {
-      max-width: 1000px;
+      max-width: 1100px;
       margin: 0 auto;
     }
 
@@ -121,22 +121,87 @@
       letter-spacing: 0.5px;
     }
 
-    textarea { 
+    .input-group label .optional {
+      color: #999;
+      font-weight: normal;
+      text-transform: none;
+      margin-left: 8px;
+      font-size: 12px;
+    }
+
+    textarea, input { 
       width: 100%; 
-      height: 120px; 
       padding: 15px;
       border: 2px solid #e0e0e0;
       border-radius: 12px;
       font-size: 16px;
-      resize: vertical;
       font-family: inherit;
       transition: all 0.3s;
     }
 
-    textarea:focus {
+    textarea {
+      height: 120px;
+      resize: vertical;
+    }
+
+    textarea.format-input {
+      height: 150px;
+      font-family: 'Consolas', monospace;
+      font-size: 14px;
+    }
+
+    textarea:focus, input:focus {
       outline: none;
       border-color: #667eea;
       box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+
+    /* 格式预设卡片 */
+    .format-presets {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .preset-btn {
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: #666;
+    }
+
+    .preset-btn:hover {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .preset-btn.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    /* 展开/折叠按钮 */
+    .toggle-format {
+      background: none;
+      border: none;
+      color: #667eea;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 15px;
+    }
+
+    .toggle-format:hover {
+      text-decoration: underline;
     }
 
     /* 按钮样式 */
@@ -329,6 +394,52 @@
       <textarea id="themeInput" placeholder="例如：古埃及宝藏主题 Slot&#10;或者：海洋冒险主题 Slot&#10;或者：水果乐园主题 Slot">古埃及宝藏主题 Slot</textarea>
     </div>
 
+    <!-- 格式参考选项 -->
+    <div class="input-group">
+      <label>
+        📋 策划案格式参考 
+        <span class="optional">(可选，自定义输出格式)</span>
+      </label>
+      
+      <!-- 格式预设按钮 -->
+      <div class="format-presets">
+        <button class="preset-btn active" data-preset="standard">📊 标准格式</button>
+        <button class="preset-btn" data-preset="detailed">📑 详细格式</button>
+        <button class="preset-btn" data-preset="concise">📝 简洁格式</button>
+        <button class="preset-btn" data-preset="technical">🔧 技术格式</button>
+      </div>
+
+      <!-- 展开/折叠按钮 -->
+      <button class="toggle-format" id="toggleFormatBtn">
+        <span>▼</span> 自定义格式
+      </button>
+
+      <!-- 格式输入框 (默认隐藏) -->
+      <textarea id="formatInput" class="format-input" style="display: none;" placeholder="在这里自定义策划案格式要求...
+
+例如：
+请严格按照以下格式输出：
+
+# 【游戏名称】
+## 1. 游戏背景
+[要求：包含世界观、时代背景、故事情节]
+
+## 2. 核心玩法
+[要求：基本规则、特殊机制、奖励游戏]
+
+## 3. 符号系统
+- 普通符号：[要求]
+- 特殊符号：[要求]
+
+## 4. 奖励设计
+[要求：基础奖励、大奖机制、累积奖金]
+
+## 5. 技术参数
+- RTP范围：[要求]
+- 波动性：[要求]
+- 下注范围：[要求]"></textarea>
+    </div>
+
     <div class="button-group">
       <button id="startGenerateBtn" class="btn btn-primary">
         🚀 开始生成策划案
@@ -381,6 +492,8 @@
 <script>
 // 获取DOM元素
 const themeInput = document.getElementById("themeInput");
+const formatInput = document.getElementById("formatInput");
+const toggleFormatBtn = document.getElementById("toggleFormatBtn");
 const startGenerateBtn = document.getElementById("startGenerateBtn");
 const extractArtBtn = document.getElementById("extractArtBtn");
 const copyPlanBtn = document.getElementById("copyPlanBtn");
@@ -397,21 +510,156 @@ const step1Card = document.getElementById("step1Card");
 const step2Card = document.getElementById("step2Card");
 const step3Card = document.getElementById("step3Card");
 
+// 预设按钮
+const presetBtns = document.querySelectorAll('.preset-btn');
+
 // 存储数据
 let currentPlan = "";
 let currentArtPrompt = "";
+let currentFormat = "";
 
 // 固定的模型配置
 const MODEL = "deepseek/deepseek-v3.2-251201";
 
+// 格式预设
+const formatPresets = {
+  standard: `请严格按照以下标准格式输出：
+
+# 【游戏名称】
+## 1. 游戏背景
+[包含世界观、时代背景、故事情节]
+
+## 2. 玩法机制
+[基本规则、特殊玩法、奖励游戏]
+
+## 3. 符号设计
+- 普通符号
+- 特殊符号（Wild、Scatter、Bonus）
+
+## 4. 奖励系统
+[普通奖励、大奖机制、累积奖金]
+
+## 5. RTP建议
+[合理的回报率范围]`,
+
+  detailed: `请生成极其详细的策划案，包含以下所有部分：
+
+# 【游戏名称】
+## 1. 游戏世界观
+### 1.1 背景故事
+### 1.2 视觉风格
+### 1.3 音乐音效
+
+## 2. 核心玩法详解
+### 2.1 基本规则
+### 2.2 特殊机制
+### 2.3 免费游戏
+### 2.4 累积奖金
+
+## 3. 符号系统
+### 3.1 普通符号（列出每种符号的赔率）
+### 3.2 特殊符号（Wild、Scatter、Bonus的详细功能）
+### 3.3 符号出现概率
+
+## 4. 奖励设计
+### 4.1 线奖
+### 4.2  scatter奖
+### 4.3 免费旋转
+### 4.4 大奖机制
+
+## 5. 技术规格
+### 5.1 RTP范围（95%-98%）
+### 5.2 波动性
+### 5.3 下注范围
+### 5.4 中奖频率
+
+## 6. 市场分析
+### 6.1 目标受众
+### 6.2 竞品分析
+### 6.3 独特卖点`,
+
+  concise: `请用简洁的方式输出，包含以下要点：
+
+【游戏名称】
+【背景】一句话说明
+【玩法】核心规则
+【符号】主要符号
+【奖励】奖励机制
+【RTP】建议范围`,
+
+  technical: `请以技术文档的格式输出，包含以下参数：
+
+# 游戏规格说明
+
+## 1. 元数据
+- 游戏ID：
+- 主题：
+- 卷轴数量：
+- 支付线数量：
+
+## 2. 数学建模
+- RTP计算：
+- 波动系数：
+- 命中频率：
+- 大奖概率：
+
+## 3. 符号表
+| 符号 | 类型 | 3x赔率 | 4x赔率 | 5x赔率 |
+|------|------|--------|--------|--------|
+
+## 4. 功能规格
+- Wild功能：
+- Scatter功能：
+- Bonus游戏：
+- FreeSpins：
+
+## 5. 配置参数
+- 最小下注：
+- 最大下注：
+- 默认RTP：
+- 可选RTP：`
+};
+
+// 切换格式输入框显示/隐藏
+toggleFormatBtn.addEventListener("click", () => {
+  if (formatInput.style.display === "none") {
+    formatInput.style.display = "block";
+    toggleFormatBtn.innerHTML = '<span>▲</span> 隐藏自定义格式';
+  } else {
+    formatInput.style.display = "none";
+    toggleFormatBtn.innerHTML = '<span>▼</span> 自定义格式';
+  }
+});
+
+// 预设按钮点击事件
+presetBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    // 移除所有active类
+    presetBtns.forEach(b => b.classList.remove("active"));
+    // 添加active类到当前按钮
+    btn.classList.add("active");
+    
+    // 获取预设值并填充到格式输入框
+    const preset = btn.dataset.preset;
+    formatInput.value = formatPresets[preset];
+    
+    // 自动展开格式输入框
+    if (formatInput.style.display === "none") {
+      formatInput.style.display = "block";
+      toggleFormatBtn.innerHTML = '<span>▲</span> 隐藏自定义格式';
+    }
+    
+    // 保存当前格式
+    currentFormat = formatPresets[preset];
+  });
+});
+
 // 更新步骤状态
 function updateSteps(step) {
-  // 重置所有步骤
   step1.className = "step";
   step2.className = "step";
   step3.className = "step";
   
-  // 根据当前步骤设置样式
   if (step >= 1) {
     step1.className = "step completed";
   }
@@ -436,7 +684,6 @@ function showInfo(type, message) {
   const icon = type === "success" ? "✅" : type === "warning" ? "⚠️" : "ℹ️";
   infoMessage.innerHTML = `${icon} ${message}`;
   
-  // 3秒后自动隐藏
   setTimeout(() => {
     infoMessage.style.display = "none";
   }, 3000);
@@ -445,33 +692,38 @@ function showInfo(type, message) {
 // 第一步：生成策划案
 startGenerateBtn.addEventListener("click", async () => {
   const theme = themeInput.value.trim();
+  const customFormat = formatInput.value.trim();
 
   if (!theme) {
     showInfo("warning", "请输入游戏主题！");
     return;
   }
 
-  // 禁用按钮，显示加载状态
   startGenerateBtn.disabled = true;
   startGenerateBtn.innerHTML = '<span class="loading"></span> 生成中...';
   planOutput.textContent = "⏳ 正在生成策划案，请稍候...";
   
-  // 更新步骤到2
   updateSteps(2);
+
+  // 构建提示词
+  let formatInstruction = "";
+  if (customFormat) {
+    formatInstruction = `\n\n请严格按照以下格式要求输出：\n${customFormat}`;
+  } else {
+    formatInstruction = `\n\n要求包含：
+1. 游戏背景（世界观、故事情节）
+2. 玩法机制（基本规则、特殊玩法）
+3. 奖励设计（普通奖励、大奖机制）
+4. 特殊符号设计（Wild、Scatter、Bonus等）
+5. RTP 建议（合理的回报率范围）`;
+  }
 
   const messages = [
     {
       role: "user",
       content: `请根据以下主题生成详细的 Slot 游戏策划案：
 
-主题：${theme}
-
-要求包含：
-1. 游戏背景（世界观、故事情节）
-2. 玩法机制（基本规则、特殊玩法）
-3. 奖励设计（普通奖励、大奖机制）
-4. 特殊符号设计（Wild、Scatter、Bonus等）
-5. RTP 建议（合理的回报率范围）
+主题：${theme}${formatInstruction}
 
 请用专业、详细的方式输出，使用Markdown格式。`
     }
@@ -495,11 +747,9 @@ startGenerateBtn.addEventListener("click", async () => {
       throw new Error(data.details || data.error || "生成失败");
     }
 
-    // 保存策划案内容
     currentPlan = data.content;
     planOutput.textContent = currentPlan;
     
-    // 启用提取按钮和复制按钮
     extractArtBtn.disabled = false;
     copyPlanBtn.style.display = "inline-block";
     
@@ -522,12 +772,10 @@ extractArtBtn.addEventListener("click", async () => {
     return;
   }
 
-  // 禁用按钮，显示加载状态
   extractArtBtn.disabled = true;
   extractArtBtn.innerHTML = '<span class="loading"></span> 提取中...';
   artOutput.textContent = "⏳ 正在从策划案中提取美术提示词...";
   
-  // 更新步骤到3
   updateSteps(3);
 
   const theme = themeInput.value.trim();
@@ -587,11 +835,9 @@ Prompt: [英文提示词]
       throw new Error(data.details || data.error || "提取失败");
     }
 
-    // 保存美术提示词
     currentArtPrompt = data.content;
     artOutput.textContent = currentArtPrompt;
     
-    // 显示复制按钮
     copyArtBtn.style.display = "inline-block";
     
     showInfo("success", "美术提示词生成成功！可以复制到Midjourney等工具使用 ✨");
@@ -638,8 +884,11 @@ copyArtBtn.addEventListener("click", () => {
   });
 });
 
-// 初始化示例主题
+// 初始化
 themeInput.value = "古埃及宝藏主题 Slot";
+// 默认选中标准格式
+formatInput.value = formatPresets.standard;
+currentFormat = formatPresets.standard;
 </script>
 
 </body>
