@@ -2,10 +2,10 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>Slot AI Studio - 文件参考生成策划案</title>
+  <title>Slot AI Studio</title>
   <style>
     body { font-family: Arial; padding: 20px; }
-    textarea { width: 100%; height: 80px; margin-bottom: 10px; }
+    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
     select, button { padding: 10px; margin-right: 10px; font-size: 16px; }
     pre { background: #f0f0f0; padding: 10px; white-space: pre-wrap; }
     hr { margin: 20px 0; }
@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<h1>Slot AI Studio - 生成策划案（可上传参考文件）</h1>
+<h1>🎰 Slot AI Studio</h1>
 
 <!-- 模型选择 -->
 <label>选择模型:</label>
@@ -25,31 +25,27 @@
 
 <hr>
 
-<!-- 游戏主题输入 -->
-<h2>Step 1: 输入 slot 游戏主题</h2>
-<textarea id="themeInput" placeholder="请输入 slot 游戏主题"></textarea>
+<h2>输入 Slot 游戏主题</h2>
+<textarea id="themeInput" placeholder="例如：古埃及宝藏主题 Slot"></textarea>
 <br>
+<button id="generateBtn">生成策划案</button>
 
-<!-- 上传参考文件 -->
-<h2>Step 2: 上传参考策划案文件（TXT / JSON）</h2>
-<input type="file" id="referenceFile" />
-<br><br>
+<hr>
 
-<button id="generatePlanBtn">生成策划案</button>
-<pre id="planOutput">等待生成...</pre>
+<h2>生成结果</h2>
+<pre id="output">等待生成...</pre>
 
 <script>
 const modelSelect = document.getElementById("modelSelect");
 const themeInput = document.getElementById("themeInput");
-const referenceFile = document.getElementById("referenceFile");
-const generatePlanBtn = document.getElementById("generatePlanBtn");
-const planOutput = document.getElementById("planOutput");
+const generateBtn = document.getElementById("generateBtn");
+const output = document.getElementById("output");
 
-// ⚙️ API Key + BaseURL 配置
+// API Key 和 BaseURL 配置
 const apiKeys = {
-  "deepseek/deepseek-v3.2-251201": "sk-367b04d6b9a8170fe6065263a3bf11bf17b6a3a8f5e39f446e168151d0f439a3",
-  "anthropic/claude-v1": "YOUR_CLAUDE_API_KEY",
-  "gemini/gemini-1": "YOUR_GEMINI_API_KEY"
+  "deepseek/deepseek-v3.2-251201": "你的DeepSeekKey",
+  "anthropic/claude-v1": "你的ClaudeKey",
+  "gemini/gemini-1": "你的GeminiKey"
 };
 
 const baseURLs = {
@@ -58,33 +54,50 @@ const baseURLs = {
   "gemini/gemini-1": "https://api.qnaigc.com"
 };
 
-// -------------------------
-// 点击生成策划案
-// -------------------------
-generatePlanBtn.addEventListener("click", async () => {
+generateBtn.addEventListener("click", async () => {
   const theme = themeInput.value.trim();
-  if (!theme) return alert("请输入游戏主题！");
-  planOutput.textContent = "生成中...";
 
-  const messages = [{ role: "user", content: `请根据以下 slot 游戏主题生成详细策划案：\n主题：${theme}` }];
-
-  const formData = new FormData();
-  formData.append("model", modelSelect.value);
-  formData.append("apiKey", apiKeys[modelSelect.value]);
-  formData.append("baseURL", baseURLs[modelSelect.value]);
-  formData.append("messages", JSON.stringify(messages));
-
-  // 如果上传了参考文件
-  if (referenceFile.files[0]) {
-    formData.append("referenceFile", referenceFile.files[0]);
+  if (!theme) {
+    alert("请输入游戏主题！");
+    return;
   }
 
+  output.textContent = "生成中...";
+
+  const model = modelSelect.value;
+
+  const messages = [
+    {
+      role: "user",
+      content: `请根据以下主题生成详细的 Slot 游戏策划案：\n\n主题：${theme}\n\n要求包含：\n1. 游戏背景\n2. 玩法机制\n3. 奖励设计\n4. 特殊符号设计\n5. RTP 建议`
+    }
+  ];
+
   try {
-    const res = await fetch("/api/generate", { method: "POST", body: formData });
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model,
+        baseURL: baseURLs[model],
+        apiKey: apiKeys[model],
+        messages
+      })
+    });
+
     const data = await res.json();
-    planOutput.textContent = data.success ? data.content : `生成失败: ${data.error || "未知错误"}`;
+
+    if (!data.success) {
+      output.textContent = "生成失败：\n" + (data.error || "未知错误");
+      return;
+    }
+
+    output.textContent = data.content;
+
   } catch (err) {
-    planOutput.textContent = `请求出错: ${err.message}`;
+    output.textContent = "请求出错：\n" + err.message;
   }
 });
 </script>
