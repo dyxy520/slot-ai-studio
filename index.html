@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Slot AI Studio - 多工具支持</title>
+  <title>Slot AI Studio - 多工具支持（含国内工具）</title>
   <style>
     * {
       margin: 0;
@@ -19,7 +19,7 @@
     }
 
     .container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
@@ -208,6 +208,15 @@
       border-color: #667eea;
     }
 
+    /* 工具分类标签 */
+    .tool-category {
+      margin-bottom: 15px;
+      font-weight: 600;
+      color: #555;
+      padding-left: 10px;
+      border-left: 3px solid #667eea;
+    }
+
     /* 工具选择区域 */
     .tool-selector {
       display: grid;
@@ -224,6 +233,8 @@
       cursor: pointer;
       transition: all 0.3s;
       text-align: center;
+      position: relative;
+      overflow: hidden;
     }
 
     .tool-card:hover {
@@ -234,6 +245,15 @@
     .tool-card.selected {
       border-color: #667eea;
       background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+    }
+
+    .tool-card.domestic {
+      border-left: 3px solid #ff9800;
+    }
+
+    .tool-card.domestic.selected {
+      border-left: 3px solid #ff9800;
+      border-color: #ff9800;
     }
 
     .tool-icon {
@@ -250,6 +270,17 @@
     .tool-desc {
       font-size: 12px;
       color: #666;
+    }
+
+    .tool-badge-domestic {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #ff9800;
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
     }
 
     /* 参数滑块 */
@@ -277,8 +308,7 @@
       display: flex;
       gap: 10px;
       margin-bottom: 20px;
-      border-bottom: 2px solid #e0e0e0;
-      padding-bottom: 10px;
+      flex-wrap: wrap;
     }
 
     .tool-tab {
@@ -288,15 +318,20 @@
       transition: all 0.3s;
       color: #666;
       font-weight: 500;
+      background: #f0f0f0;
     }
 
     .tool-tab:hover {
-      background: #f0f0f0;
+      background: #e0e0e0;
     }
 
     .tool-tab.active {
       background: #667eea;
       color: white;
+    }
+
+    .tool-tab.domestic-tab.active {
+      background: #ff9800;
     }
 
     /* 提示词示例 */
@@ -308,6 +343,10 @@
       font-size: 13px;
       color: #666;
       border-left: 3px solid #667eea;
+    }
+
+    .prompt-example.domestic {
+      border-left: 3px solid #ff9800;
     }
 
     /* 展开/折叠按钮 */
@@ -571,7 +610,7 @@
     </div>
   </div>
 
-  <!-- 第三步：美术提示词卡片（带工具选择） -->
+  <!-- 第三步：美术提示词卡片（带工具选择，包含国内工具） -->
   <div class="card" id="step3Card" style="opacity: 0.5; pointer-events: none;">
     <div class="card-header">
       <div class="step-badge">3</div>
@@ -585,45 +624,131 @@
         <span class="tool-badge" id="selectedToolBadge">当前选择: Midjourney</span>
       </label>
       
-      <div class="tool-selector">
-        <div class="tool-card selected" data-tool="midjourney" onclick="selectTool('midjourney')">
+      <!-- 工具分类标签 -->
+      <div class="tool-tabs">
+        <span class="tool-tab active" onclick="filterTools('all')" id="tabAll">🌐 全部工具</span>
+        <span class="tool-tab" onclick="filterTools('international')" id="tabInternational">🌍 国际工具</span>
+        <span class="tool-tab domestic-tab" onclick="filterTools('domestic')" id="tabDomestic">🇨🇳 国内工具</span>
+      </div>
+      
+      <!-- 国际工具 -->
+      <div class="tool-category international-category">🌍 国际知名工具</div>
+      <div class="tool-selector" id="internationalTools">
+        <div class="tool-card selected" data-tool="midjourney" data-category="international" onclick="selectTool('midjourney')">
           <div class="tool-icon">🎨</div>
           <div class="tool-name">Midjourney</div>
-          <div class="tool-desc">适合艺术风格、创意设计</div>
+          <div class="tool-desc">艺术风格、创意设计</div>
         </div>
-        <div class="tool-card" data-tool="sd" onclick="selectTool('sd')">
+        <div class="tool-card" data-tool="sd" data-category="international" onclick="selectTool('sd')">
           <div class="tool-icon">🌌</div>
           <div class="tool-name">Stable Diffusion</div>
-          <div class="tool-desc">适合写实、精细控制</div>
+          <div class="tool-desc">写实、精细控制</div>
         </div>
-        <div class="tool-card" data-tool="dalle" onclick="selectTool('dalle')">
+        <div class="tool-card" data-tool="dalle" data-category="international" onclick="selectTool('dalle')">
           <div class="tool-icon">🖼️</div>
           <div class="tool-name">DALL-E 3</div>
-          <div class="tool-desc">适合创意、自然语言</div>
+          <div class="tool-desc">创意、自然语言</div>
         </div>
-        <div class="tool-card" data-tool="novelai" onclick="selectTool('novelai')">
+        <div class="tool-card" data-tool="novelai" data-category="international" onclick="selectTool('novelai')">
           <div class="tool-icon">✨</div>
           <div class="tool-name">NovelAI</div>
-          <div class="tool-desc">适合二次元、动漫风格</div>
+          <div class="tool-desc">二次元、动漫风格</div>
         </div>
       </div>
 
-      <!-- 工具参数调节（根据选择的工具动态显示） -->
-      <div class="param-slider" id="paramSlider" style="display: none;">
-        <label>
-          <span>风格化程度 (--stylize)</span>
-          <span id="styleValue">100</span>
-        </label>
-        <input type="range" id="styleSlider" min="0" max="1000" value="100" step="10">
-        
-        <label style="margin-top: 15px;">
-          <span>怪异度 (--weird)</span>
-          <span id="weirdValue">0</span>
-        </label>
-        <input type="range" id="weirdSlider" min="0" max="3000" value="0" step="10">
+      <!-- 国内工具 -->
+      <div class="tool-category domestic-category" style="margin-top: 20px;">🇨🇳 国内热门工具</div>
+      <div class="tool-selector" id="domesticTools">
+        <div class="tool-card domestic" data-tool="doubao" data-category="domestic" onclick="selectTool('doubao')">
+          <div class="tool-badge-domestic">国内</div>
+          <div class="tool-icon">🫘</div>
+          <div class="tool-name">豆包</div>
+          <div class="tool-desc">字节跳动出品，中文优化</div>
+        </div>
+        <div class="tool-card domestic" data-tool="jimeng" data-category="domestic" onclick="selectTool('jimeng')">
+          <div class="tool-badge-domestic">国内</div>
+          <div class="tool-icon">✨</div>
+          <div class="tool-name">即梦</div>
+          <div class="tool-desc">创意设计、商业应用</div>
+        </div>
+        <div class="tool-card domestic" data-tool="banbana" data-category="domestic" onclick="selectTool('banbana')">
+          <div class="tool-badge-domestic">国内</div>
+          <div class="tool-icon">🎯</div>
+          <div class="tool-name">Banbana Pro</div>
+          <div class="tool-desc">专业级AI绘画</div>
+        </div>
+        <div class="tool-card domestic" data-tool="tiantu" data-category="domestic" onclick="selectTool('tiantu')">
+          <div class="tool-badge-domestic">国内</div>
+          <div class="tool-icon">🎨</div>
+          <div class="tool-name">天图</div>
+          <div class="tool-desc">腾讯出品，写实风格</div>
+        </div>
+        <div class="tool-card domestic" data-tool="wujing" data-category="domestic" onclick="selectTool('wujing')">
+          <div class="tool-badge-domestic">国内</div>
+          <div class="tool-icon">🐉</div>
+          <div class="tool-name">无界AI</div>
+          <div class="tool-desc">国风、二次元</div>
+        </div>
+        <div class="tool-card domestic" data-tool="yige" data-category="domestic" onclick="selectTool('yige')">
+          <div class="tool-badge-domestic">国内</div>
+          <div class="tool-icon">🎭</div>
+          <div class="tool-name">一帧</div>
+          <div class="tool-desc">视频生成、插画</div>
+        </div>
+        <div class="tool-card domestic" data-tool="draft" data-category="domestic" onclick="selectTool('draft')">
+          <div class="tool-badge-domestic">国内</div>
+          <div class="tool-icon">✏️</div>
+          <div class="tool-name">Draft</div>
+          <div class="tool-desc">草图转成品</div>
+        </div>
+        <div class="tool-card domestic" data-tool="lingxi" data-category="domestic" onclick="selectTool('lingxi')">
+          <div class="tool-badge-domestic">国内</div>
+          <div class="tool-icon">🦊</div>
+          <div class="tool-name">灵犀AI</div>
+          <div class="tool-desc">国潮风格</div>
+        </div>
+      </div>
+
+      <!-- 工具参数调节（根据不同工具动态显示） -->
+      <div class="param-slider" id="paramSlider">
+        <div id="midjourneyParams" style="display: block;">
+          <label>
+            <span>风格化程度 (--stylize)</span>
+            <span id="styleValue">100</span>
+          </label>
+          <input type="range" id="styleSlider" min="0" max="1000" value="100" step="10">
+          
+          <label style="margin-top: 15px;">
+            <span>怪异度 (--weird)</span>
+            <span id="weirdValue">0</span>
+          </label>
+          <input type="range" id="weirdSlider" min="0" max="3000" value="0" step="10">
+        </div>
+
+        <div id="domesticParams" style="display: none;">
+          <label>
+            <span>风格偏好</span>
+          </label>
+          <select id="domesticStyleSelect" style="margin-bottom: 10px;">
+            <option value="realistic">写实风格</option>
+            <option value="anime">二次元/动漫</option>
+            <option value="chinese">国风/水墨</option>
+            <option value="cartoon">卡通/插画</option>
+            <option value="fantasy">幻想/奇幻</option>
+          </select>
+          
+          <label>
+            <span>生成质量</span>
+          </label>
+          <select id="qualitySelect">
+            <option value="standard">标准</option>
+            <option value="hd">高清</option>
+            <option value="ultra">超清</option>
+          </select>
+        </div>
         
         <div class="prompt-example" id="toolExample">
-          <strong>示例格式:</strong> /imagine prompt [描述] --ar 16:9 --v 6.0
+          <strong>Midjourney 格式示例:</strong> /imagine prompt [描述] --ar 16:9 --v 6.0
         </div>
       </div>
     </div>
@@ -660,6 +785,10 @@ const weirdSlider = document.getElementById("weirdSlider");
 const styleValue = document.getElementById("styleValue");
 const weirdValue = document.getElementById("weirdValue");
 const toolExample = document.getElementById("toolExample");
+const midjourneyParams = document.getElementById("midjourneyParams");
+const domesticParams = document.getElementById("domesticParams");
+const domesticStyleSelect = document.getElementById("domesticStyleSelect");
+const qualitySelect = document.getElementById("qualitySelect");
 
 // 步骤元素
 const step1 = document.getElementById("step1");
@@ -669,6 +798,11 @@ const step1Card = document.getElementById("step1Card");
 const step2Card = document.getElementById("step2Card");
 const step3Card = document.getElementById("step3Card");
 
+// 标签页元素
+const tabAll = document.getElementById("tabAll");
+const tabInternational = document.getElementById("tabInternational");
+const tabDomestic = document.getElementById("tabDomestic");
+
 // 预设按钮
 const presetBtns = document.querySelectorAll('.preset-btn');
 
@@ -677,6 +811,7 @@ let currentPlan = "";
 let currentArtPrompt = "";
 let currentFormat = "";
 let selectedTool = "midjourney"; // 默认选择Midjourney
+let currentFilter = "all"; // 当前筛选
 
 // 固定的模型配置
 const MODEL = "deepseek/deepseek-v3.2-251201";
@@ -780,47 +915,157 @@ const formatPresets = {
 - 可选RTP：`
 };
 
-// AI工具配置
+// AI工具配置（包含国内工具）
 const toolConfig = {
+  // 国际工具
   midjourney: {
     name: 'Midjourney',
     icon: '🎨',
+    category: 'international',
     format: '/imagine prompt [描述] --ar 16:9 --v 6.0',
     params: ['stylize', 'weird', 'chaos'],
     description: '适合艺术风格、创意设计',
-    promptRequirements: '需要详细的风格描述、色彩方案、构图建议，使用英文描述最佳'
+    promptRequirements: '需要详细的英文描述，包含风格、色彩、构图、光影。使用英文关键词最佳。'
   },
   sd: {
     name: 'Stable Diffusion',
     icon: '🌌',
+    category: 'international',
     format: '[描述], masterpiece, best quality, high resolution, 8k, detailed',
     params: ['cfg_scale', 'steps', 'sampler'],
     description: '适合写实、精细控制',
-    promptRequirements: '需要正向提示词和负向提示词，包含技术参数如masterpiece, best quality'
+    promptRequirements: '需要正向提示词和负向提示词，包含技术参数如masterpiece, best quality, 可以使用embedding。'
   },
   dalle: {
     name: 'DALL-E 3',
     icon: '🖼️',
+    category: 'international',
     format: '[自然语言描述]',
     params: ['quality', 'style'],
     description: '适合创意、自然语言',
-    promptRequirements: '使用自然语言描述，可以包含风格参考和艺术家名字'
+    promptRequirements: '使用自然语言详细描述，可以包含风格参考和艺术家名字，支持中英文。'
   },
   novelai: {
     name: 'NovelAI',
     icon: '✨',
+    category: 'international',
     format: '{ [描述] }',
     params: ['scale', 'sampler', 'steps'],
     description: '适合二次元、动漫风格',
-    promptRequirements: '需要动漫风格描述，可以包含角色特征和场景'
+    promptRequirements: '需要动漫风格描述，包含角色特征、场景、服饰细节，可以使用标签格式。'
+  },
+  
+  // 国内工具
+  doubao: {
+    name: '豆包',
+    icon: '🫘',
+    category: 'domestic',
+    format: '[中文描述]',
+    params: ['style', 'quality'],
+    description: '字节跳动出品，中文优化',
+    promptRequirements: '支持中文描述，需要详细的场景、角色、风格描述，可以指定色彩和构图。'
+  },
+  jimeng: {
+    name: '即梦',
+    icon: '✨',
+    category: 'domestic',
+    format: '[中文描述] 风格：[风格] 色彩：[色彩]',
+    params: ['style', 'quality'],
+    description: '创意设计、商业应用',
+    promptRequirements: '适合商业设计，需要明确用途和风格要求，支持中文描述。'
+  },
+  banbana: {
+    name: 'Banbana Pro',
+    icon: '🎯',
+    category: 'domestic',
+    format: '[描述] --style [风格] --quality [质量]',
+    params: ['style', 'quality'],
+    description: '专业级AI绘画',
+    promptRequirements: '支持中英文混合，需要详细的构图、光影、材质描述，适合高质量输出。'
+  },
+  tiantu: {
+    name: '天图',
+    icon: '🎨',
+    category: 'domestic',
+    format: '[中文描述] 风格：[写实/插画/二次元]',
+    params: ['style', 'quality'],
+    description: '腾讯出品，写实风格',
+    promptRequirements: '擅长写实风格，需要详细的光影、材质、细节描述，支持中文。'
+  },
+  wujing: {
+    name: '无界AI',
+    icon: '🐉',
+    category: 'domestic',
+    format: '[描述] --style [国风/二次元/写实]',
+    params: ['style', 'quality'],
+    description: '国风、二次元',
+    promptRequirements: '擅长国风和水墨风格，需要包含传统元素描述，支持中文。'
+  },
+  yige: {
+    name: '一帧',
+    icon: '🎭',
+    category: 'domestic',
+    format: '[场景描述] 角色：[角色描述] 风格：[风格]',
+    params: ['style', 'quality'],
+    description: '视频生成、插画',
+    promptRequirements: '适合插画和视频生成，需要动态场景描述，支持中文。'
+  },
+  draft: {
+    name: 'Draft',
+    icon: '✏️',
+    category: 'domestic',
+    format: '[草图描述] 优化：[具体要求]',
+    params: ['style', 'quality'],
+    description: '草图转成品',
+    promptRequirements: '适合从草图生成成品，需要描述草图内容和优化方向。'
+  },
+  lingxi: {
+    name: '灵犀AI',
+    icon: '🦊',
+    category: 'domestic',
+    format: '[描述] 风格：[国潮/传统/现代]',
+    params: ['style', 'quality'],
+    description: '国潮风格',
+    promptRequirements: '擅长国潮风格，需要包含传统元素和现代设计的融合描述。'
+  }
+};
+
+// 筛选工具
+window.filterTools = function(filter) {
+  currentFilter = filter;
+  
+  // 更新标签页样式
+  tabAll.className = 'tool-tab';
+  tabInternational.className = 'tool-tab';
+  tabDomestic.className = 'tool-tab domestic-tab';
+  
+  if (filter === 'all') {
+    tabAll.classList.add('active');
+    document.querySelector('.international-category').style.display = 'block';
+    document.querySelector('.domestic-category').style.display = 'block';
+    document.getElementById('internationalTools').style.display = 'grid';
+    document.getElementById('domesticTools').style.display = 'grid';
+  } else if (filter === 'international') {
+    tabInternational.classList.add('active');
+    document.querySelector('.international-category').style.display = 'block';
+    document.querySelector('.domestic-category').style.display = 'none';
+    document.getElementById('internationalTools').style.display = 'grid';
+    document.getElementById('domesticTools').style.display = 'none';
+  } else if (filter === 'domestic') {
+    tabDomestic.classList.add('active');
+    document.querySelector('.international-category').style.display = 'none';
+    document.querySelector('.domestic-category').style.display = 'block';
+    document.getElementById('internationalTools').style.display = 'none';
+    document.getElementById('domesticTools').style.display = 'grid';
   }
 };
 
 // 选择工具
 window.selectTool = function(tool) {
   selectedTool = tool;
+  const toolInfo = toolConfig[tool];
   
-  // 更新卡片选中状态
+  // 更新所有工具卡片的选中状态
   document.querySelectorAll('.tool-card').forEach(card => {
     if (card.dataset.tool === tool) {
       card.classList.add('selected');
@@ -830,21 +1075,28 @@ window.selectTool = function(tool) {
   });
   
   // 更新徽章
-  selectedToolBadge.textContent = `当前选择: ${toolConfig[tool].name}`;
+  selectedToolBadge.textContent = `当前选择: ${toolInfo.name}`;
   
-  // 显示参数滑块（仅Midjourney有）
-  if (tool === 'midjourney') {
-    paramSlider.style.display = 'block';
+  // 根据工具类型显示不同的参数面板
+  if (toolInfo.category === 'international' && tool === 'midjourney') {
+    midjourneyParams.style.display = 'block';
+    domesticParams.style.display = 'none';
+  } else if (toolInfo.category === 'domestic') {
+    midjourneyParams.style.display = 'none';
+    domesticParams.style.display = 'block';
   } else {
-    paramSlider.style.display = 'none';
+    midjourneyParams.style.display = 'none';
+    domesticParams.style.display = 'none';
   }
   
   // 更新示例
-  toolExample.innerHTML = `<strong>${toolConfig[tool].name} 格式示例:</strong> ${toolConfig[tool].format}`;
+  const exampleClass = toolInfo.category === 'domestic' ? 'prompt-example domestic' : 'prompt-example';
+  toolExample.className = exampleClass;
+  toolExample.innerHTML = `<strong>${toolInfo.name} 格式示例:</strong> ${toolInfo.format}`;
   
-  // 如果已经有生成的内容，提示重新生成
+  // 提示重新生成
   if (currentArtPrompt) {
-    showInfo('info', `已切换到 ${toolConfig[tool].name}，点击"从策划案提取美术提示词"重新生成适合该工具的提示词`);
+    showInfo('info', `已切换到 ${toolInfo.name}，点击"从策划案提取美术提示词"重新生成适合该工具的提示词`);
   }
 };
 
@@ -1006,19 +1258,25 @@ extractArtBtn.addEventListener("click", async () => {
   // 获取参数值
   const stylize = styleSlider.value;
   const weird = weirdSlider.value;
+  const domesticStyle = domesticStyleSelect.value;
+  const quality = qualitySelect.value;
 
   // 根据选择的工具构建提示词要求
   let toolInstruction = `请为 ${tool.name} 生成AI绘画提示词。
 
 工具特点：${tool.description}
 格式要求：${tool.format}
-${tool.promptRequirements}`;
+要求：${tool.promptRequirements}`;
 
   if (selectedTool === 'midjourney') {
     toolInstruction += `\n\n参数建议：
 - 风格化程度: ${stylize}
 - 怪异度: ${weird}
-请根据这些参数调整提示词。`;
+请根据这些参数调整提示词，在提示词末尾添加对应参数。`;
+  } else if (tool.category === 'domestic') {
+    toolInstruction += `\n\n风格偏好：${domesticStyle}
+质量要求：${quality}
+请根据这些偏好调整提示词，使用中文描述为主。`;
   }
 
   const messages = [
@@ -1041,7 +1299,7 @@ ${currentPlan}
 请用以下格式清晰输出：
 
 🎨 【类型】游戏主视觉
-Prompt: [适合${tool.name}的提示词]
+Prompt: [适合${tool.name}的提示词，严格按照工具格式]
 中文描述：[中文说明]
 适用场景：[具体用途]
 
@@ -1120,4 +1378,21 @@ copyArtBtn.addEventListener("click", () => {
     copyArtBtn.textContent = "✅ 已复制！";
     setTimeout(() => {
       copyArtBtn.textContent = originalText;
-   
+    }, 2000);
+    showInfo("success", "提示词已复制到剪贴板");
+  }).catch(err => {
+    showInfo("warning", "复制失败：" + err.message);
+  });
+});
+
+// 初始化
+themeInput.value = "古埃及宝藏主题 Slot";
+formatInput.value = formatPresets.standard;
+currentFormat = formatPresets.standard;
+
+// 默认选中Midjourney
+selectTool('midjourney');
+</script>
+
+</body>
+</html>
