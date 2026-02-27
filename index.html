@@ -8,7 +8,7 @@
     body { 
       font-family: 'Segoe UI', Arial, sans-serif; 
       padding: 20px; 
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
       background-color: #f5f5f5;
     }
@@ -23,6 +23,10 @@
       border-bottom: 2px solid #4CAF50;
       padding-bottom: 10px;
     }
+    h2 {
+      color: #555;
+      margin-top: 25px;
+    }
     textarea { 
       width: 100%; 
       height: 120px; 
@@ -32,28 +36,54 @@
       border-radius: 5px;
       font-size: 16px;
       resize: vertical;
+      box-sizing: border-box;
+      font-family: inherit;
     }
     textarea:focus {
       outline: none;
       border-color: #4CAF50;
       box-shadow: 0 0 5px rgba(76,175,80,0.3);
     }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 15px 0;
+    }
     button { 
       background-color: #4CAF50;
       color: white;
-      padding: 12px 30px;
+      padding: 12px 24px;
       border: none;
       border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: all 0.3s;
+      flex: 1;
+      min-width: 150px;
     }
     button:hover {
       background-color: #45a049;
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     button:disabled {
       background-color: #cccccc;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    button.secondary {
+      background-color: #2196F3;
+    }
+    button.secondary:hover {
+      background-color: #1976D2;
+    }
+    button.warning {
+      background-color: #ff9800;
+    }
+    button.warning:hover {
+      background-color: #f57c00;
     }
     pre { 
       background: #f8f9fa; 
@@ -64,6 +94,33 @@
       line-height: 1.6;
       border: 1px solid #e9ecef;
       min-height: 200px;
+      max-height: 500px;
+      overflow-y: auto;
+      font-family: 'Segoe UI', monospace;
+    }
+    .tab-container {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 15px;
+      background: #f0f0f0;
+      padding: 5px;
+      border-radius: 8px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+    .tab:hover {
+      background: rgba(255,255,255,0.5);
+    }
+    .tab.active {
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     hr { 
       margin: 30px 0; 
@@ -75,33 +132,108 @@
       font-size: 14px;
       margin-top: 10px;
     }
+    .copy-btn {
+      background-color: #6c757d;
+      padding: 8px 16px;
+      font-size: 14px;
+      margin-top: 10px;
+      min-width: auto;
+      flex: none;
+    }
+    .copy-btn:hover {
+      background-color: #5a6268;
+    }
+    .footer-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .badge {
+      background-color: #4CAF50;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>🎰 Slot AI Studio</h1>
+  <h1>🎰 Slot AI Studio - 美术提示词生成器</h1>
 
   <h2>输入 Slot 游戏主题</h2>
   <textarea id="themeInput" placeholder="例如：古埃及宝藏主题 Slot&#10;或者：海洋冒险主题 Slot&#10;或者：水果乐园主题 Slot"></textarea>
-  <br>
-  <button id="generateBtn">生成策划案</button>
+  
+  <div class="button-group">
+    <button id="generateBtn">🎮 生成完整策划案</button>
+    <button id="generateArtPromptBtn" class="secondary">🎨 直接生成美术提示词</button>
+  </div>
   <div class="info">使用 DeepSeek V3.2 模型生成</div>
 
   <hr>
 
-  <h2>生成结果</h2>
-  <pre id="output">等待生成...</pre>
+  <div class="tab-container">
+    <div class="tab active" onclick="switchTab('plan')" id="tabPlan">📋 完整策划案</div>
+    <div class="tab" onclick="switchTab('art')" id="tabArt">🎨 美术提示词</div>
+  </div>
+
+  <div id="planSection">
+    <h2>📋 完整策划案</h2>
+    <pre id="output">等待生成...</pre>
+  </div>
+
+  <div id="artSection" style="display: none;">
+    <h2>🎨 美术提示词 
+      <span class="badge" id="artSourceBadge">从策划案提取</span>
+    </h2>
+    <pre id="artOutput">请先生成策划案，或点击"直接生成美术提示词"</pre>
+    <div class="footer-buttons">
+      <button id="copyArtPromptBtn" class="copy-btn">📋 复制提示词</button>
+      <button id="regenerateArtBtn" class="warning">🔄 重新生成美术提示词</button>
+    </div>
+  </div>
 </div>
 
 <script>
+// 获取DOM元素
 const themeInput = document.getElementById("themeInput");
 const generateBtn = document.getElementById("generateBtn");
+const generateArtPromptBtn = document.getElementById("generateArtPromptBtn");
 const output = document.getElementById("output");
+const artOutput = document.getElementById("artOutput");
+const copyArtPromptBtn = document.getElementById("copyArtPromptBtn");
+const regenerateArtBtn = document.getElementById("regenerateArtBtn");
+const tabPlan = document.getElementById("tabPlan");
+const tabArt = document.getElementById("tabArt");
+const planSection = document.getElementById("planSection");
+const artSection = document.getElementById("artSection");
+const artSourceBadge = document.getElementById("artSourceBadge");
+
+// 存储当前生成的策划案内容
+let currentPlan = "";
+let currentArtPrompt = "";
 
 // 固定的模型配置
 const MODEL = "deepseek/deepseek-v3.2-251201";
-const BASE_URL = "https://api.qnaigc.com/v1";
 
+// 切换标签页
+window.switchTab = function(tab) {
+  if (tab === 'plan') {
+    tabPlan.classList.add('active');
+    tabArt.classList.remove('active');
+    planSection.style.display = 'block';
+    artSection.style.display = 'none';
+  } else {
+    tabArt.classList.add('active');
+    tabPlan.classList.remove('active');
+    planSection.style.display = 'none';
+    artSection.style.display = 'block';
+  }
+};
+
+// 生成完整策划案
 generateBtn.addEventListener("click", async () => {
   const theme = themeInput.value.trim();
 
@@ -110,10 +242,12 @@ generateBtn.addEventListener("click", async () => {
     return;
   }
 
-  // 禁用按钮，防止重复提交
-  generateBtn.disabled = true;
-  generateBtn.textContent = "生成中...";
+  // 禁用按钮
+  setButtonsDisabled(true);
   output.textContent = "⏳ 正在生成策划案，请稍候...";
+  
+  // 切换到策划案标签
+  switchTab('plan');
 
   const messages = [
     {
@@ -148,21 +282,214 @@ generateBtn.addEventListener("click", async () => {
     const data = await res.json();
 
     if (!data.success) {
-      throw new Error(data.error || data.details || "生成失败");
+      throw new Error(data.details || data.error || "生成失败");
     }
 
-    // 格式化输出
-    output.textContent = data.content;
+    currentPlan = data.content;
+    output.textContent = currentPlan;
+    
+    // 自动生成美术提示词
+    await extractArtPrompt(currentPlan, theme);
 
   } catch (err) {
     output.textContent = "❌ 生成失败：\n" + err.message;
     console.error("错误详情:", err);
   } finally {
-    // 恢复按钮状态
-    generateBtn.disabled = false;
-    generateBtn.textContent = "生成策划案";
+    setButtonsDisabled(false);
   }
 });
+
+// 直接生成美术提示词
+generateArtPromptBtn.addEventListener("click", async () => {
+  const theme = themeInput.value.trim();
+
+  if (!theme) {
+    alert("请输入游戏主题！");
+    return;
+  }
+
+  setButtonsDisabled(true);
+  artOutput.textContent = "⏳ 正在生成美术提示词...";
+  artSourceBadge.textContent = "直接生成";
+  
+  // 切换到美术提示词标签
+  switchTab('art');
+
+  const messages = [
+    {
+      role: "user",
+      content: `请为一个"${theme}"的Slot游戏生成详细的AI绘画提示词。
+
+要求生成5-8个不同的美术提示词，覆盖以下方面：
+1. 游戏主视觉图
+2. 角色设计（如果有）
+3. 场景背景
+4. 特殊符号图标
+5. 奖励动画场景
+
+每个提示词要求：
+- 详细的风格描述（如：赛博朋克、卡通、写实等）
+- 色彩方案
+- 构图建议
+- 光影效果
+- 适合AI绘画的关键词
+
+请用以下格式输出：
+
+🎨 游戏主视觉提示词：
+[详细提示词]
+
+🎨 角色/符号提示词：
+[详细提示词]
+
+🎨 场景背景提示词：
+[详细提示词]
+
+🎨 特效动画提示词：
+[详细提示词]
+
+（请确保提示词适合Midjourney或Stable Diffusion等AI绘画工具使用）`
+    }
+  ];
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: messages
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.details || data.error || "生成失败");
+    }
+
+    currentArtPrompt = data.content;
+    artOutput.textContent = currentArtPrompt;
+
+  } catch (err) {
+    artOutput.textContent = "❌ 生成失败：\n" + err.message;
+    console.error("错误详情:", err);
+  } finally {
+    setButtonsDisabled(false);
+  }
+});
+
+// 从策划案中提取美术部分
+async function extractArtPrompt(plan, theme) {
+  artOutput.textContent = "⏳ 正在从策划案中提取美术提示词...";
+  artSourceBadge.textContent = "从策划案提取";
+
+  const messages = [
+    {
+      role: "user",
+      content: `请根据以下Slot游戏策划案，生成详细的AI绘画提示词。
+
+策划案内容：
+${plan}
+
+主题：${theme}
+
+要求生成5-8个不同的美术提示词，覆盖以下方面：
+1. 游戏主视觉图
+2. 角色设计
+3. 场景背景
+4. 特殊符号图标
+5. 奖励动画场景
+
+每个提示词要求包含详细的风格、色彩、构图、光影描述。
+请确保提示词适合Midjourney或Stable Diffusion等AI绘画工具使用。
+
+请用清晰的格式输出。`
+    }
+  ];
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: messages
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.details || data.error || "提取失败");
+    }
+
+    currentArtPrompt = data.content;
+    artOutput.textContent = currentArtPrompt;
+
+  } catch (err) {
+    artOutput.textContent = "❌ 提取失败：\n" + err.message;
+    console.error("错误详情:", err);
+  }
+}
+
+// 重新生成美术提示词
+regenerateArtBtn.addEventListener("click", async () => {
+  const theme = themeInput.value.trim();
+  
+  if (!theme) {
+    alert("请输入游戏主题！");
+    return;
+  }
+
+  if (currentPlan) {
+    // 如果有策划案，基于策划案重新生成
+    await extractArtPrompt(currentPlan, theme);
+  } else {
+    // 如果没有策划案，直接生成
+    await generateArtPromptBtn.click();
+  }
+});
+
+// 复制美术提示词
+copyArtPromptBtn.addEventListener("click", () => {
+  if (!currentArtPrompt) {
+    alert("没有可复制的美术提示词！");
+    return;
+  }
+  
+  navigator.clipboard.writeText(currentArtPrompt).then(() => {
+    const originalText = copyArtPromptBtn.textContent;
+    copyArtPromptBtn.textContent = "✅ 已复制！";
+    setTimeout(() => {
+      copyArtPromptBtn.textContent = originalText;
+    }, 2000);
+  }).catch(err => {
+    alert("复制失败：" + err.message);
+  });
+});
+
+// 辅助函数：设置所有按钮的禁用状态
+function setButtonsDisabled(disabled) {
+  generateBtn.disabled = disabled;
+  generateArtPromptBtn.disabled = disabled;
+  regenerateArtBtn.disabled = disabled;
+  
+  if (disabled) {
+    generateBtn.textContent = "生成中...";
+    generateArtPromptBtn.textContent = "生成中...";
+  } else {
+    generateBtn.textContent = "🎮 生成完整策划案";
+    generateArtPromptBtn.textContent = "🎨 直接生成美术提示词";
+  }
+}
+
+// 初始化
+console.log("Slot AI Studio 已加载");
 </script>
 
 </body>
