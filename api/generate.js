@@ -1,17 +1,15 @@
 // Serverless Function: /api/generate
-// 功能：处理前端请求，包括文本生成和文件分析
+// 功能：根据文本和参考文件生成策划案 / UI 提示词
 import formidable from "formidable";
 import fs from "fs";
 
 export const config = {
-  api: {
-    bodyParser: false // 关闭默认 bodyParser，方便处理文件上传
-  }
+  api: { bodyParser: false } // 关闭默认 bodyParser，方便处理文件上传
 };
 
 export default async function handler(req, res) {
   // -------------------------------
-  // 允许跨域
+  // 跨域设置
   // -------------------------------
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -22,32 +20,29 @@ export default async function handler(req, res) {
 
   try {
     // -------------------------------
-    // 判断是否上传了文件
+    // 解析表单，包括文件和文本字段
     // -------------------------------
     const form = new formidable.IncomingForm();
     form.parse(req, async (err, fields, files) => {
-      if (err) {
-        return res.status(500).json({ error: "解析表单失败", details: err.message });
-      }
+      if (err) return res.status(500).json({ error: "解析表单失败", details: err.message });
 
-      // 获取前端传来的参数
       const { model, messages, baseURL, apiKey } = fields;
 
       // -------------------------------
-      // 如果上传了文件，读取文件内容并添加到 prompt
+      // 如果上传了参考文件，把文件内容加入 prompt
       // -------------------------------
-      let fileContent = "";
-      if (files.uploadFile) {
-        const uploadedFile = files.uploadFile;
-        fileContent = fs.readFileSync(uploadedFile.filepath, "utf-8");
+      let referenceText = "";
+      if (files.referenceFile) {
+        const uploadedFile = files.referenceFile;
+        referenceText = fs.readFileSync(uploadedFile.filepath, "utf-8");
         messages.push({
           role: "user",
-          content: `请分析以下文件内容：\n${fileContent}`
+          content: `请参考以下策划文本的格式和风格生成新的策划案：\n${referenceText}`
         });
       }
 
       // -------------------------------
-      // 调用 AI Provider 接口
+      // 调用 AI Provider API
       // -------------------------------
       const response = await fetch(`${baseURL}/chat/completions`, {
         method: "POST",
@@ -60,7 +55,9 @@ export default async function handler(req, res) {
 
       const data = await response.json();
 
+      // -------------------------------
       // 解析返回内容
+      // -------------------------------
       let content = "";
       if (data.choices && data.choices.length > 0) {
         content = data.choices[0].message?.content || data.choices[0].text || "";
@@ -72,7 +69,6 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ success: true, content, usage: data.usage || {} });
     });
-
   } catch (error) {
     return res.status(500).json({
       error: "Provider request failed",
