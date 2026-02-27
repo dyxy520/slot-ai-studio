@@ -4,12 +4,11 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // 处理OPTIONS请求（预检请求）
+  // 处理OPTIONS请求
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // 只允许POST请求
   if (req.method !== "POST") {
     return res.status(405).json({
       success: false,
@@ -20,7 +19,6 @@ export default async function handler(req, res) {
   try {
     const { model, messages } = req.body;
 
-    // 验证必要参数
     if (!model || !messages) {
       return res.status(400).json({
         success: false,
@@ -39,11 +37,12 @@ export default async function handler(req, res) {
       });
     }
 
+    console.log("API密钥前几位:", apiKey.substring(0, 10) + "...");
+    console.log("使用的模型:", model);
+
     const baseURL = "https://api.qnaigc.com/v1";
 
-    console.log("正在调用API，模型:", model);
-
-    // 调用DeepSeek API
+    // 调用API
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -53,8 +52,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: model,
         messages: messages,
-        temperature: 0.7,  // 添加一些参数来控制输出
-        max_tokens: 2000    // 限制输出长度
+        temperature: 0.7,
+        max_tokens: 2000
       })
     });
 
@@ -62,14 +61,26 @@ export default async function handler(req, res) {
 
     // 检查API响应
     if (!response.ok) {
-      console.error("API错误:", data);
-      throw new Error(data.error?.message || `API请求失败 (${response.status})`);
+      console.error("API错误状态:", response.status);
+      console.error("API错误详情:", data);
+      
+      // 更详细的错误信息
+      return res.status(response.status).json({
+        success: false,
+        error: "API调用失败",
+        details: data.error?.message || JSON.stringify(data),
+        status: response.status
+      });
     }
 
     // 检查响应格式
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error("API返回格式错误:", data);
-      throw new Error("API返回格式错误");
+      return res.status(500).json({
+        success: false,
+        error: "API返回格式错误",
+        details: data
+      });
     }
 
     // 返回成功响应
@@ -82,7 +93,6 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("服务器错误:", error);
     
-    // 返回错误信息
     return res.status(500).json({
       success: false,
       error: "生成失败",
