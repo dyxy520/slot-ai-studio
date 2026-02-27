@@ -56,6 +56,7 @@
       position: relative;
       z-index: 2;
       transition: all 0.3s ease;
+      cursor: pointer;
     }
 
     .step.active {
@@ -71,6 +72,11 @@
       color: white;
     }
 
+    .step.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     /* 主卡片 */
     .card {
       background: white;
@@ -79,6 +85,11 @@
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
       margin-bottom: 20px;
       transition: all 0.3s ease;
+    }
+
+    .card.disabled {
+      opacity: 0.5;
+      pointer-events: none;
     }
 
     .card-header {
@@ -521,9 +532,9 @@
 <div class="container">
   <!-- 步骤指示器 -->
   <div class="step-indicator">
-    <div class="step active" id="step1">1. 输入主题</div>
-    <div class="step" id="step2">2. 生成策划案</div>
-    <div class="step" id="step3">3. 选择工具 & 提取美术提示词</div>
+    <div class="step active" id="step1" onclick="jumpToStep(1)">1. 输入主题</div>
+    <div class="step" id="step2" onclick="jumpToStep(2)">2. 生成策划案</div>
+    <div class="step" id="step3" onclick="jumpToStep(3)">3. 选择工具 & 提取美术提示词</div>
   </div>
 
   <!-- 第一步：输入主题卡片 -->
@@ -567,7 +578,7 @@
   </div>
 
   <!-- 第二步：策划案卡片 -->
-  <div class="card" id="step2Card" style="opacity: 0.5; pointer-events: none;">
+  <div class="card disabled" id="step2Card">
     <div class="card-header">
       <div class="step-badge">2</div>
       <h2>生成的策划案</h2>
@@ -583,7 +594,7 @@
   </div>
 
   <!-- 第三步：工具选择 & 美术提示词卡片 -->
-  <div class="card" id="step3Card" style="opacity: 0.5; pointer-events: none;">
+  <div class="card disabled" id="step3Card">
     <div class="card-header">
       <div class="step-badge">3</div>
       <h2>选择工具 & 提取美术提示词</h2>
@@ -773,6 +784,7 @@ let currentPlan = "";
 let currentArtPrompt = "";
 let currentFormat = "";
 let selectedTool = null; // 初始为null，必须选择工具
+let currentStep = 1; // 当前步骤
 
 // 固定的模型配置
 const MODEL = "deepseek/deepseek-v3.2-251201";
@@ -920,6 +932,49 @@ const toolConfig = {
   }
 };
 
+// 跳转到指定步骤
+window.jumpToStep = function(step) {
+  // 只能跳转到已完成或当前步骤
+  if (step <= currentStep) {
+    updateSteps(step);
+  }
+};
+
+// 更新步骤状态
+function updateSteps(step) {
+  currentStep = step;
+  
+  // 更新步骤指示器
+  step1.className = "step";
+  step2.className = "step";
+  step3.className = "step";
+  
+  if (step >= 1) {
+    step1.className = "step completed";
+  }
+  if (step >= 2) {
+    step2.className = "step completed";
+  }
+  
+  // 激活当前步骤
+  if (step === 1) {
+    step1.className = "step active";
+    step1Card.classList.remove("disabled");
+    step2Card.classList.add("disabled");
+    step3Card.classList.add("disabled");
+  } else if (step === 2) {
+    step2.className = "step active";
+    step1Card.classList.remove("disabled");
+    step2Card.classList.remove("disabled");
+    step3Card.classList.add("disabled");
+  } else if (step === 3) {
+    step3.className = "step active";
+    step1Card.classList.remove("disabled");
+    step2Card.classList.remove("disabled");
+    step3Card.classList.remove("disabled");
+  }
+}
+
 // 选择工具
 window.selectTool = function(tool) {
   selectedTool = tool;
@@ -1003,28 +1058,6 @@ presetBtns.forEach(btn => {
   });
 });
 
-// 更新步骤状态
-function updateSteps(step) {
-  step1.className = "step";
-  step2.className = "step";
-  step3.className = "step";
-  
-  if (step >= 1) {
-    step1.className = "step completed";
-  }
-  if (step >= 2) {
-    step2.className = "step active";
-    step2Card.style.opacity = "1";
-    step2Card.style.pointerEvents = "auto";
-  }
-  if (step >= 3) {
-    step2.className = "step completed";
-    step3.className = "step active";
-    step3Card.style.opacity = "1";
-    step3Card.style.pointerEvents = "auto";
-  }
-}
-
 // 显示信息提示
 function showInfo(type, message) {
   infoMessage.style.display = "flex";
@@ -1052,7 +1085,6 @@ startGenerateBtn.addEventListener("click", async () => {
   startGenerateBtn.innerHTML = '<span class="loading"></span> 生成中...';
   planOutput.textContent = "⏳ 正在生成策划案，请稍候...";
   
-  updateSteps(2);
 
   let formatInstruction = "";
   if (customFormat) {
@@ -1100,6 +1132,9 @@ startGenerateBtn.addEventListener("click", async () => {
     
     copyPlanBtn.style.display = "inline-block";
     
+    // 进入第二步
+    updateSteps(2);
+    
     // 如果已经选择了工具，启用提取按钮
     if (selectedTool) {
       extractArtBtn.disabled = false;
@@ -1133,18 +1168,17 @@ extractArtBtn.addEventListener("click", async () => {
   extractArtBtn.innerHTML = '<span class="loading"></span> 提取中...';
   artOutput.textContent = "⏳ 正在根据选择的工具生成提示词...";
   
-  updateSteps(3);
 
   const theme = themeInput.value.trim();
   const tool = toolConfig[selectedTool];
   
   // 获取参数值
-  const stylize = styleSlider.value;
-  const weird = weirdSlider.value;
-  const cfg = cfgSlider.value;
-  const steps = stepsSlider.value;
-  const domesticStyle = domesticStyleSelect.value;
-  const quality = qualitySelect.value;
+  const stylize = styleSlider ? styleSlider.value : 100;
+  const weird = weirdSlider ? weirdSlider.value : 0;
+  const cfg = cfgSlider ? cfgSlider.value : 7;
+  const steps = stepsSlider ? stepsSlider.value : 20;
+  const domesticStyle = domesticStyleSelect ? domesticStyleSelect.value : "写实";
+  const quality = qualitySelect ? qualitySelect.value : "标准";
 
   // 根据选择的工具构建提示词要求
   let toolInstruction = `请为 ${tool.name} 生成AI绘画提示词。
@@ -1222,6 +1256,9 @@ Prompt: [适合${tool.name}的提示词]
     
     copyArtBtn.style.display = "inline-block";
     
+    // 进入第三步
+    updateSteps(3);
+    
     showInfo("success", `已为 ${tool.name} 生成提示词！可以复制使用 ✨`);
 
   } catch (err) {
@@ -1295,6 +1332,7 @@ copyArtBtn.addEventListener("click", () => {
 themeInput.value = "古埃及宝藏主题 Slot";
 formatInput.value = formatPresets.standard;
 currentFormat = formatPresets.standard;
+updateSteps(1); // 从第一步开始
 </script>
 
 </body>
