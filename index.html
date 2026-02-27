@@ -374,13 +374,12 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      flex: 1;
-      min-width: 200px;
     }
 
     .btn-primary {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
+      width: 100%;
     }
 
     .btn-primary:hover:not(:disabled) {
@@ -388,19 +387,10 @@
       box-shadow: 0 10px 25px rgba(102,126,234,0.4);
     }
 
-    .btn-secondary {
-      background: #f0f0f0;
-      color: #666;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: #e0e0e0;
-      transform: translateY(-2px);
-    }
-
     .btn-success {
       background: #4CAF50;
       color: white;
+      width: 100%;
     }
 
     .btn-success:hover:not(:disabled) {
@@ -408,7 +398,7 @@
       transform: translateY(-2px);
     }
 
-    .btn:disabled {
+    .btn-success:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
@@ -516,10 +506,6 @@
       .step {
         padding: 8px 16px;
         font-size: 14px;
-      }
-      
-      .btn {
-        min-width: 100%;
       }
 
       .tool-selector {
@@ -714,7 +700,7 @@
         </div>
       </div>
 
-      <!-- 提取按钮 -->
+      <!-- 提取按钮（合并到第三步） -->
       <div style="margin-top: 20px;">
         <button id="extractArtBtn" class="btn btn-success" disabled>
           🎨 2. 从策划案提取美术提示词
@@ -1024,8 +1010,6 @@ window.selectTool = function(tool) {
   // 提示
   if (currentPlan) {
     showInfo('info', `已选择 ${toolInfo.name}，点击下方按钮提取美术提示词`);
-  } else {
-    showInfo('info', `已选择 ${toolInfo.name}，请先完成第二步生成策划案`);
   }
 };
 
@@ -1132,15 +1116,15 @@ startGenerateBtn.addEventListener("click", async () => {
     
     copyPlanBtn.style.display = "inline-block";
     
-    // 进入第二步
-    updateSteps(2);
+    // 直接进入第三步
+    updateSteps(3);
     
     // 如果已经选择了工具，启用提取按钮
     if (selectedTool) {
       extractArtBtn.disabled = false;
     }
     
-    showInfo("success", "策划案生成成功！请选择AI绘画工具并提取提示词 →");
+    showInfo("success", "策划案生成成功！请在第三步选择工具并提取提示词");
 
   } catch (err) {
     planOutput.textContent = "❌ 生成失败：\n" + err.message;
@@ -1255,9 +1239,6 @@ Prompt: [适合${tool.name}的提示词]
     artOutput.textContent = currentArtPrompt;
     
     copyArtBtn.style.display = "inline-block";
-    
-    // 进入第三步
-    updateSteps(3);
     
     showInfo("success", `已为 ${tool.name} 生成提示词！可以复制使用 ✨`);
 
