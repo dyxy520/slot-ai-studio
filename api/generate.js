@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     // -------------------------------
     // 服务器端安全存放 API Key 和 baseURL
     // -------------------------------
-    const apiKey = "sk-36******439a3"; // 替换成你自己的七牛/DeepSeek API Key
+    const apiKey = "sk-367b04d6b9a8170fe6065263a3bf11bf17b6a3a8f5e39f446e168151d0f439a3"; // 替换成你自己的七牛/DeepSeek API Key
     const baseURL = "https://api.qnaigc.com/v1";
 
     // -------------------------------
